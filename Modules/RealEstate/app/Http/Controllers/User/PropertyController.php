@@ -14,15 +14,12 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PropertyController extends Controller
 {
-    protected string $language;
-
+    
     public function __construct(
         protected PropertyRepository $repository,
         protected PropertyService $service
     ) {
         parent::__construct();
-        $this->language = request()->header('Accept-Language') ?? 'en';
-        app()->setLocale($this->language);
         $this->middleware('auth:sanctum')->except(['index', 'show', 'search']);
     }
 

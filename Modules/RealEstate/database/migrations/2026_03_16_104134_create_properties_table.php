@@ -1,4 +1,5 @@
 <?php
+// database/migrations/2024_01_01_000005_create_properties_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,16 +16,14 @@ return new class extends Migration
             // User relations
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('project_id')->nullable()->constrained()->nullOnDelete();
-            
-            // Category relations
             $table->foreignId('category_id')->nullable()->constrained('property_categories')->nullOnDelete();
-            $table->foreignId('type_id')->nullable()->constrained('property_types')->nullOnDelete();
             
-            // Basic info (translatable)
-            $table->json('title');
+            // Slug
             $table->string('slug')->unique();
-            $table->json('description');
-            $table->json('content')->nullable();
+            
+            // Default values (fallback when translation missing)
+            $table->string('default_title')->nullable();
+            $table->text('default_description')->nullable();
             
             // Pricing
             $table->decimal('price', 15, 2);
@@ -36,27 +35,35 @@ return new class extends Migration
             $table->decimal('land_area', 10, 2)->nullable();
             $table->decimal('built_area', 10, 2)->nullable();
             
-            // Details
+            // Property details
             $table->integer('bedrooms')->nullable();
             $table->integer('bathrooms')->nullable();
             $table->integer('floors')->nullable();
             $table->integer('garages')->nullable();
             $table->integer('year_built')->nullable();
-            
             $table->string('furnishing')->nullable();
             $table->string('legal_status')->nullable();
             $table->string('ownership_type')->nullable();
             
-            // Location
-            $table->string('address');
-            $table->string('city');
-            $table->string('district');
-            $table->string('ward')->nullable();
+            // Location - using hierarchy IDs
+            $table->foreignId('country_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('province_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('district_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('ward_id')->nullable()->constrained()->nullOnDelete();
+            
+            // Detailed address (street name, building number)
             $table->string('street')->nullable();
-            $table->string('project_name')->nullable();
+            $table->string('street_number')->nullable();
+            $table->string('building_name')->nullable();
+            $table->string('full_address')->nullable();
+            
+            // Coordinates
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
-            $table->string('map_url')->nullable();
+    
+            
+            // Project info
+            $table->string('project_name')->nullable();
             
             // Status
             $table->enum('status', [
@@ -64,9 +71,10 @@ return new class extends Migration
                 'expired', 'hidden', 'rejected'
             ])->default('pending');
             
-            $table->string('transaction_type')->default('sell');
+            // Transaction type (sale/rent)
+            $table->enum('type', ['sale', 'rent'])->default('sale');
             
-            // VIP and Featured
+            // Premium features
             $table->boolean('is_featured')->default(false);
             $table->boolean('is_vip')->default(false);
             $table->timestamp('vip_expires_at')->nullable();
@@ -74,31 +82,28 @@ return new class extends Migration
             $table->boolean('is_top')->default(false);
             $table->timestamp('top_expires_at')->nullable();
             
-            // Stats
+            // Statistics
             $table->integer('views')->default(0);
             $table->integer('unique_views')->default(0);
             $table->integer('contact_views')->default(0);
             $table->integer('favorites_count')->default(0);
-            
-            // SEO (translatable)
-            $table->json('meta_title')->nullable();
-            $table->json('meta_description')->nullable();
-            $table->json('meta_keywords')->nullable();
             
             // Timestamps
             $table->timestamp('published_at')->nullable();
             $table->timestamp('expired_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
+            
             // Indexes
             $table->index(['user_id', 'status']);
-            $table->index(['city', 'district', 'ward']);
+            $table->index(['country_id', 'province_id', 'district_id']);
             $table->index(['price', 'area']);
             $table->index(['transaction_type', 'status']);
             $table->index('is_featured');
             $table->index('is_vip');
             $table->index('published_at');
+            $table->index('status');
+            $table->index('slug');
         });
     }
 

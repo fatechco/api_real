@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('property_types', function (Blueprint $table) {
-            $table->id();
+        Schema::create('amenity_translations', function (Blueprint $table) {
+           $table->id();
+            $table->foreignId('amenity_id')->constrained()->onDelete('cascade');
+            $table->string('locale', 10)->index();
             $table->string('name');
-            $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->string('icon')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->integer('order')->default(0);
             $table->timestamps();
-            $table->softDeletes();
+            
+            $table->unique(['amenity_id', 'locale']);
         });
     }
 
@@ -29,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('property_types');
+        Schema::dropIfExists('amenity_translations');
     }
 };

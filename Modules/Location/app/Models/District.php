@@ -1,7 +1,6 @@
 <?php
 namespace Modules\Location\Models;
 
-use App\Traits\Loadable;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -10,23 +9,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 
 /**
- * App\Models\Country
+ * Modules\Location\Models\District
  *
  * @property int $id
- * @property string|null $code
  * @property boolean $active
- * @property string|null $img
- * @property Province|null $province
- * @property Collection|Province[] $provinces
- * @property District|null $district
- * @property Collection|District[] $districts
- * @property int|null $provinces_count
- * @property Collection|CountryTranslation[] $translations
- * @property CountryTranslation|null $translation
+ * @property int|null $country_id
+ * @property int|null $province_id
+ * @property Collection|DistrictTranslation[] $translations
+ * @property DistrictTranslation|null $translation
  * @property int|null $translations_count
- * @property Collection|DeliveryPrice[] $deliveryPrices
- * @property DeliveryPrice|null $deliveryPrice
- * @property int|null $delivery_price_count
+
  * @method static Builder|self active()
  * @method static Builder|self filter(array $filter)
  * @method static Builder|self newModelQuery()
@@ -35,12 +27,12 @@ use Illuminate\Support\Collection;
  * @method static Builder|self whereId($value)
  * @mixin Eloquent
  */
-class Country extends Model
+class District extends Model
 {
-    use Loadable;
+    use Countries, Provinces;
 
-    public $guarded    = ['id'];
-    public $timestamps = false;
+    public $guarded     = ['id'];
+    public $timestamps  = false;
 
     public $casts = [
         'active' => 'bool',
@@ -48,37 +40,18 @@ class Country extends Model
 
     public function translations(): HasMany
     {
-        return $this->hasMany(CountryTranslation::class);
+        return $this->hasMany(DistrictTranslation::class);
     }
 
     public function translation(): HasOne
     {
-        return $this->hasOne(CountryTranslation::class);
+        return $this->hasOne(DistrictTranslation::class);
     }
 
-    public function province(): HasOne
-    {
-        return $this->hasOne(Province::class);
-    }
-
-    public function provinces(): HasMany
-    {
-        return $this->hasMany(Province::class);
-    }
-
-    public function district(): HasOne
-    {
-        return $this->hasOne(District::class);
-    }
-
-    public function districts(): HasMany
-    {
-        return $this->hasMany(District::class);
-    }
 
     public function scopeActive($query): Builder
     {
-        /** @var Country $query */
+        /** @var Area $query */
         return $query->where('active', true);
     }
 
@@ -94,13 +67,14 @@ class Country extends Model
 
                 }));
             })
-            ->when(data_get($filter, 'code'), fn($q, $code) => $q->where('code', $code))
-            ->when(isset($filter['active']), fn($q) => $q->where('active', $filter['active']))
+            ->when(data_get($filter, 'country_id'), fn($q, $countryId)  => $q->where('country_id',  $countryId))
+            ->when(data_get($filter, 'province_id'), fn($q, $provinceId) => $q->where('province_id', $provinceId))
+            ->when(isset($filter['active']),            fn($q)              => $q->where('active', $filter['active']))
             ->when(data_get($filter, 'search'), function ($query, $search) {
                 $query->whereHas('translations', function ($q) use ($search) {
                     $q
                         ->where(fn($q) => $q->where('title', 'LIKE', "%$search%")->orWhere('id', $search))
-                        ->select('id', 'country_id', 'locale', 'title');
+                        ->select('id', 'district_id', 'locale', 'title');
                 });
             });
     }

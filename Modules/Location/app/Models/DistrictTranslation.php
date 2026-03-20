@@ -8,29 +8,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 
 /**
- * App\Models\AreaTranslation
+ * Modules\Location\Models\DistrictTranslation
  *
  * @property int $id
- * @property int $area_id
+ * @property int $district_id
  * @property string $locale
  * @property string $title
- * @property Area|null $area
+ * @property District|null $district
  * @method static Builder|self newModelQuery()
  * @method static Builder|self newQuery()
  * @method static Builder|self query()
  * @method static Builder|self whereId($value)
- * @method static Builder|self whereAreaId($value)
+ * @method static Builder|self whereDistrictId($value)
  * @method static Builder|self whereTitle($value)
  * @mixin Eloquent
  */
-class AreaTranslation extends Model
+class DistrictTranslation extends Model
 {
     public $timestamps = false;
 
     protected $guarded = ['id'];
 
-    public function area(): BelongsTo
+    public function district(): BelongsTo
     {
-        return $this->belongsTo(Area::class);
+        return $this->belongsTo(District::class);
     }
 }

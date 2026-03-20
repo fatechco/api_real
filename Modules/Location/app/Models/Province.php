@@ -15,17 +15,13 @@ use Illuminate\Support\Collection;
  * App\Models\City
  *
  * @property int $id
- * @property int $region_id
  * @property int $country_id
  * @property boolean $active
- * @property Area|null $area
- * @property Collection|Area[] $areas
- * @property Collection|CityTranslation[] $translations
- * @property CityTranslation|null $translation
+ * @property District|null $district
+ * @property Collection|District[] $districts
+ * @property Collection|ProvinceTranslation[] $translations
+ * @property ProvinceTranslation|null $translation
  * @property int|null $translations_count
- * @property Collection|DeliveryPrice[] $deliveryPrices
- * @property DeliveryPrice|null $deliveryPrice
- * @property int|null $delivery_price_count
  * @method static Builder|self active()
  * @method static Builder|self filter(array $filter)
  * @method static Builder|self newModelQuery()
@@ -35,9 +31,9 @@ use Illuminate\Support\Collection;
  * @method static Builder|self whereCategoryId($value)
  * @mixin Eloquent
  */
-class City extends Model
+class Province extends Model
 {
-    use Regions, Countries;
+    use Countries;
 
     public $guarded = ['id'];
     public $timestamps = false;
@@ -48,32 +44,22 @@ class City extends Model
 
     public function translations(): HasMany
     {
-        return $this->hasMany(CityTranslation::class);
+        return $this->hasMany(ProvinceTranslation::class);
     }
 
     public function translation(): HasOne
     {
-        return $this->hasOne(CityTranslation::class);
+        return $this->hasOne(ProvinceTranslation::class);
     }
 
-    public function area(): HasOne
+    public function district(): HasOne
     {
-        return $this->hasOne(Area::class);
+        return $this->hasOne(District::class);
     }
 
-    public function areas(): HasMany
+    public function districts(): HasMany
     {
-        return $this->hasMany(Area::class);
-    }
-
-    public function deliveryPrice(): HasOne
-    {
-        return $this->hasOne(DeliveryPrice::class);
-    }
-
-    public function deliveryPrices(): HasMany
-    {
-        return $this->hasMany(DeliveryPrice::class);
+        return $this->hasMany(District::class);
     }
 
     public function scopeActive($query): Builder
@@ -94,15 +80,13 @@ class City extends Model
 
                 }));
             })
-            ->when(data_get($filter, 'region_id'),  fn($q, $regionId) => $q->where('region_id', $regionId))
             ->when(data_get($filter, 'country_id'), fn($q, $countryId) => $q->where('country_id', $countryId))
-            ->when(data_get($filter, 'has_price'),  fn($q) => $q->whereHas('deliveryPrice'))
             ->when(isset($filter['active']), fn($q) => $q->where('active', $filter['active']))
             ->when(data_get($filter, 'search'), function ($query, $search) {
                 $query->whereHas('translations', function ($q) use ($search) {
                     $q
                         ->where(fn($q) => $q->where('title', 'LIKE', "%$search%")->orWhere('id', $search))
-                        ->select('id', 'city_id', 'locale', 'title');
+                        ->select('id', 'province_id', 'locale', 'title');
                 });
             });
     }
