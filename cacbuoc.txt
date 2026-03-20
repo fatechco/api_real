@@ -1,0 +1,681 @@
+CÁC BƯỚC PHÁT TRIỂN MODULE THEO THỨ TỰ
+PHASE 0: THIẾT LẬP NỀN TẢNG (Tuần 0)
+text
+┌─────────────────────────────────────────────────────────────────┐
+│                    PHASE 0: THIẾT LẬP                          │
+│  ├── Bước 0.1: Cài đặt Laravel & Cấu hình môi trường          │
+│  ├── Bước 0.2: Cài đặt package nwidart/laravel-modules        │
+│  ├── Bước 0.3: Tạo cấu trúc Core/Foundation                   │
+│  └── Bước 0.4: Thiết lập database và kết nối                  │
+└─────────────────────────────────────────────────────────────────┘
+Chi tiết:
+
+bash
+# 0.1 Tạo project Laravel mới
+composer create-project laravel/laravel realestate-api
+
+# 0.2 Cài đặt module package
+composer require nwidart/laravel-modules
+php artisan vendor:publish --provider="Nwidart\Modules\LaravelModulesServiceProvider"
+
+# 0.3 Tạo cấu trúc Core
+mkdir -p Core/Foundation/{Traits,Contracts,Helpers}
+mkdir -p Core/Http/{Controllers,Middleware}
+mkdir -p Core/Services
+
+# 0.4 Cập nhật composer.json
+# Thêm "Core\\": "Core/" vào autoload.psr-4
+composer dump-autoload
+PHASE 1: CORE MODULES - NỀN TẢNG (Tuần 1-2)
+Những module bắt buộc phải có trước
+
+text
+┌─────────────────────────────────────────────────────────────────┐
+│              PHASE 1: CORE MODULES (Tuần 1-2)                   │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 1.1: Module Auth                                          │
+│  Bước 1.2: Module User                                          │
+│  Bước 1.3: Module RolePermission (Spatie)                      │
+│  Bước 1.4: Module Media                                         │
+│  Bước 1.5: Module Notification                                  │
+└─────────────────────────────────────────────────────────────────┘
+Bước 1.1: Module Auth (2 ngày)
+bash
+# Tạo module
+php artisan module:make Auth
+
+# Tạo controllers
+cd Modules/Auth
+php artisan module:make-controller Api/LoginController Auth
+php artisan module:make-controller Api/RegisterController Auth
+php artisan module:make-controller Api/ForgotPasswordController Auth
+php artisan module:make-controller Api/VerifyController Auth
+
+# Tạo routes
+touch Routes/api.php
+# Copy routes auth từ api_real vào đây
+
+# Tạo tests
+mkdir -p Tests/Feature
+touch Tests/Feature/AuthTest.php
+Kết quả: Có API đăng nhập, đăng ký, quên mật khẩu, xác thực email/phone.
+
+Bước 1.2: Module User (3 ngày)
+bash
+# Tạo module
+php artisan module:make User
+
+# Tạo models
+cd Modules/User
+php artisan module:make-model User User
+php artisan module:make-model UserAddress User
+php artisan module:make-model UserActivity User
+
+# Tạo controllers
+php artisan module:make-controller Api/ProfileController User
+php artisan module:make-controller Api/AddressController User
+php artisan module:make-controller Api/NotificationController User
+
+# Tạo repositories & services
+mkdir -p Repositories Services
+Kết quả: Có API quản lý hồ sơ, địa chỉ, thông báo cá nhân.
+
+Bước 1.3: Module RolePermission (2 ngày)
+bash
+# Cài đặt Spatie
+composer require spatie/laravel-permission
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+php artisan migrate
+
+# Tạo module
+php artisan module:make RolePermission
+
+# Tạo seeder
+cd Modules/RolePermission
+mkdir -p Database/Seeders
+touch Database/Seeders/RolePermissionSeeder.php
+# Copy nội dung RolePermissionSeeder từ log trước
+Kết quả: Hệ thống phân quyền hoạt động, có sẵn roles và permissions.
+
+Bước 1.4: Module Media (2 ngày)
+bash
+# Tạo module
+php artisan module:make Media
+
+# Cài đặt intervention/image
+composer require intervention/image
+
+# Tạo models
+cd Modules/Media
+php artisan module:make-model Media Media
+php artisan module:make-model MediaFolder Media
+
+# Tạo controllers
+php artisan module:make-controller Api/UploadController Media
+php artisan module:make-controller Api/GalleryController Media
+
+# Tạo migrations
+php artisan module:make-migration create_media_table Media
+php artisan module:make-migration create_media_folders_table Media
+Kết quả: Upload ảnh, tạo thumbnail, quản lý gallery.
+
+Bước 1.5: Module Notification (2 ngày)
+bash
+# Tạo module
+php artisan module:make Notification
+
+# Tạo models
+cd Modules/Notification
+php artisan module:make-model Notification Notification
+php artisan module:make-model NotificationTemplate Notification
+
+# Tạo channels
+mkdir -p Channels
+touch Channels/DatabaseChannel.php
+touch Channels/MailChannel.php
+touch Channels/SmsChannel.php
+
+# Tạo controllers
+php artisan module:make-controller Api/NotificationController Notification
+Kết quả: Gửi email, SMS, push notification, in-app notification.
+
+PHASE 2: SUPPORT MODULES - HỖ TRỢ (Tuần 3-4)
+Module hỗ trợ cho các tính năng chính
+
+text
+┌─────────────────────────────────────────────────────────────────┐
+│            PHASE 2: SUPPORT MODULES (Tuần 3-4)                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 2.1: Module Setting                                       │
+│  Bước 2.2: Module Language                                      │
+│  Bước 2.3: Module Currency                                      │
+│  Bước 2.4: Module Location                                      │
+│  Bước 2.5: Module Log                                           │
+│  Bước 2.6: Module Cache                                         │
+└─────────────────────────────────────────────────────────────────┘
+Bước 2.1: Module Setting (2 ngày)
+bash
+# Tạo module
+php artisan module:make Setting
+
+# Tạo model
+cd Modules/Setting
+php artisan module:make-model Setting Setting
+
+# Tạo migrations
+php artisan module:make-migration create_settings_table Setting
+
+# Tạo controllers
+php artisan module:make-controller Api/SettingController Setting
+php artisan module:make-controller Admin/SettingController Setting
+Kết quả: Quản lý cấu hình hệ thống qua database.
+
+Bước 2.2: Module Language (2 ngày)
+bash
+# Tạo module
+php artisan module:make Language
+
+# Tạo models
+cd Modules/Language
+php artisan module:make-model Language Language
+php artisan module:make-model Translation Translation
+
+# Tạo migrations
+php artisan module:make-migration create_languages_table Language
+php artisan module:make-migration create_translations_table Language
+
+# Tạo middleware
+php artisan module:make-middleware SetLocale Language
+Kết quả: Đa ngôn ngữ, quản lý translations.
+
+Bước 2.3: Module Currency (1 ngày)
+bash
+# Tạo module
+php artisan module:make Currency
+
+# Tạo model
+cd Modules/Currency
+php artisan module:make-model Currency Currency
+
+# Tạo migrations
+php artisan module:make-migration create_currencies_table Currency
+
+# Tạo service
+touch Services/CurrencyService.php
+Kết quả: Quản lý tiền tệ, tỷ giá, định dạng.
+
+Bước 2.4: Module Location (3 ngày)
+bash
+# Tạo module
+php artisan module:make Location
+
+# Tạo models
+cd Modules/Location
+php artisan module:make-model Country Location
+php artisan module:make-model Province Location
+php artisan module:make-model District Location
+php artisan module:make-model Ward Location
+
+# Tạo migrations
+php artisan module:make-migration create_countries_table Location
+php artisan module:make-migration create_provinces_table Location
+php artisan module:make-migration create_districts_table Location
+php artisan module:make-migration create_wards_table Location
+
+# Tạo seeder để import dữ liệu
+touch Database/Seeders/VietnamLocationSeeder.php
+Kết quả: Dữ liệu địa điểm, API tra cứu tỉnh/thành, quận/huyện.
+
+Bước 2.5: Module Log (1 ngày)
+bash
+# Tạo module
+php artisan module:make Log
+
+# Tạo model
+cd Modules/Log
+php artisan module:make-model ActivityLog Log
+
+# Tạo middleware
+php artisan module:make-middleware LogActivity Log
+Kết quả: Ghi log hoạt động, audit trail.
+
+Bước 2.6: Module Cache (1 ngày)
+bash
+# Tạo module
+php artisan module:make Cache
+
+# Tạo service
+cd Modules/Cache
+touch Services/CacheService.php
+touch Console/Commands/ClearCache.php
+Kết quả: Quản lý cache, clear cache tự động.
+
+PHASE 3: BUSINESS MODULES - KINH DOANH (Tuần 5-6)
+Module xử lý giao dịch và doanh thu
+
+text
+┌─────────────────────────────────────────────────────────────────┐
+│          PHASE 3: BUSINESS MODULES (Tuần 5-6)                   │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 3.1: Module Package (QUAN TRỌNG NHẤT)                    │
+│  Bước 3.2: Module Credit                                        │
+│  Bước 3.3: Module Payment                                       │
+│  Bước 3.4: Module Invoice                                       │
+│  Bước 3.5: Module Coupon                                        │
+└─────────────────────────────────────────────────────────────────┘
+Bước 3.1: Module Package (4 ngày) - QUAN TRỌNG NHẤT
+bash
+# Tạo module
+php artisan module:make Package
+
+# Tạo models
+cd Modules/Package
+php artisan module:make-model Package Package
+php artisan module:make-model UserPackage Package
+php artisan module:make-model CreditTransaction Package
+php artisan module:make-model UsageLog Package
+
+# Tạo migrations
+php artisan module:make-migration create_packages_table Package
+php artisan module:make-migration create_user_packages_table Package
+php artisan module:make-migration create_credit_transactions_table Package
+php artisan module:make-migration create_usage_logs_table Package
+
+# Tạo seeder từ file packages.data.ts
+touch Database/Seeders/PackageSeeder.php
+
+# Tạo services
+touch Services/PackageService.php
+touch Services/CreditService.php
+
+# Tạo middleware
+php artisan module:make-middleware CheckPackagePermission Package
+php artisan module:make-middleware CheckListingLimit Package
+
+# Tạo controllers
+php artisan module:make-controller Api/PackageController Package
+php artisan module:make-controller Api/CreditController Package
+php artisan module:make-controller Api/SubscriptionController Package
+
+# Tạo events
+mkdir -p Events
+touch Events/PackagePurchased.php
+touch Events/PackageExpired.php
+
+# Tạo listeners
+mkdir -p Listeners
+touch Listeners/AssignRoleOnPackagePurchase.php
+touch Listeners/RevokeRoleOnPackageExpire.php
+
+# Tạo jobs
+mkdir -p Jobs
+touch Jobs/ResetMonthlyQuota.php
+touch Jobs/CheckExpiredPackages.php
+Kết quả: Hệ thống quản lý gói dịch vụ, credits, hạn mức.
+
+Bước 3.2: Module Credit (2 ngày)
+bash
+# Module Credit nằm trong Package, chỉ cần thêm:
+cd Modules/Package
+
+# Thêm các methods trong CreditService
+# purchaseCredits()
+# useCredits()
+# getBalance()
+# getTransactions()
+
+# Thêm controllers
+php artisan module:make-controller Api/CreditPurchaseController Package
+Kết quả: Mua bán credits, lịch sử giao dịch.
+
+Bước 3.3: Module Payment (3 ngày)
+bash
+# Tạo module
+php artisan module:make Payment
+
+# Cài đặt các package thanh toán
+composer require vnpay/vnpay
+composer require mollie/mollie-api-php
+# ... tùy theo cổng thanh toán
+
+# Tạo models
+cd Modules/Payment
+php artisan module:make-model Payment Payment
+php artisan module:make-model Transaction Payment
+
+# Tạo migrations
+php artisan module:make-migration create_payments_table Payment
+php artisan module:make-migration create_transactions_table Payment
+
+# Tạo services
+mkdir -p Services/Gateways
+touch Services/PaymentService.php
+touch Services/Gateways/VnPayGateway.php
+touch Services/Gateways/MomoGateway.php
+touch Services/Gateways/PayPalGateway.php
+
+# Tạo controllers
+php artisan module:make-controller Api/PaymentController Payment
+php artisan module:make-controller Api/VnPayController Payment
+php artisan module:make-controller Api/MomoController Payment
+Kết quả: Tích hợp nhiều cổng thanh toán.
+
+Bước 3.4: Module Invoice (2 ngày)
+bash
+# Tạo module
+php artisan module:make Invoice
+
+# Tạo models
+cd Modules/Invoice
+php artisan module:make-model Invoice Invoice
+php artisan module:make-model InvoiceItem Invoice
+
+# Tạo migrations
+php artisan module:make-migration create_invoices_table Invoice
+php artisan module:make-migration create_invoice_items_table Invoice
+
+# Tạo service để generate PDF
+composer require barryvdh/laravel-dompdf
+touch Services/InvoiceGenerator.php
+Kết quả: Tạo và quản lý hóa đơn, xuất PDF.
+
+Bước 3.5: Module Coupon (2 ngày)
+bash
+# Tạo module
+php artisan module:make Coupon
+
+# Tạo models
+cd Modules/Coupon
+php artisan module:make-model Coupon Coupon
+php artisan module:make-model CouponUsage Coupon
+
+# Tạo migrations
+php artisan module:make-migration create_coupons_table Coupon
+php artisan module:make-migration create_coupon_usages_table Coupon
+
+# Tạo service để validate coupon
+touch Services/CouponService.php
+Kết quả: Mã giảm giá, khuyến mãi.
+
+PHASE 4: DOMAIN MODULES - BẤT ĐỘNG SẢN (Tuần 7-9)
+Module chính cho dự án RealEstate
+
+text
+┌─────────────────────────────────────────────────────────────────┐
+│         PHASE 4: DOMAIN MODULES (Tuần 7-9)                      │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 4.1: Module Property (Property, Category, Type)          │
+│  Bước 4.2: Module Project (Dự án)                              │
+│  Bước 4.3: Module Amenity (Tiện ích)                           │
+│  Bước 4.4: Module Agent/Agency (Tích hợp với User)             │
+│  Bước 4.5: Module Favorite (Yêu thích)                         │
+│  Bước 4.6: Module Review (Đánh giá)                            │
+│  Bước 4.7: Module Appointment (Lịch hẹn)                       │
+└─────────────────────────────────────────────────────────────────┘
+Bước 4.1: Module Property (4 ngày)
+bash
+# Tạo module
+php artisan module:make Property
+
+# Tạo models
+cd Modules/Property
+php artisan module:make-model Property Property
+php artisan module:make-model PropertyCategory Property
+php artisan module:make-model PropertyType Property
+php artisan module:make-model PropertyImage Property
+
+# Tạo migrations
+php artisan module:make-migration create_properties_table Property
+php artisan module:make-migration create_property_categories_table Property
+php artisan module:make-migration create_property_types_table Property
+php artisan module:make-migration create_property_images_table Property
+
+# Tạo repositories
+touch Repositories/PropertyRepository.php
+touch Repositories/PropertySearchRepository.php
+
+# Tạo services
+touch Services/PropertyService.php
+touch Services/PropertySearchService.php
+
+# Tạo controllers
+php artisan module:make-controller Api/PropertyController Property
+php artisan module:make-controller Api/PropertySearchController Property
+php artisan module:make-controller Admin/PropertyController Property
+php artisan module:make-controller Agent/PropertyController Property
+
+# Tạo requests
+touch Http/Requests/PropertyRequest.php
+touch Http/Requests/PropertySearchRequest.php
+
+# Tạo resources
+touch Http/Resources/PropertyResource.php
+touch Http/Resources/PropertyCollection.php
+
+# Tạo policies
+touch Policies/PropertyPolicy.php
+
+# Tạo events
+touch Events/PropertyCreated.php
+touch Events/PropertyViewed.php
+Kết quả: CRUD bất động sản, tìm kiếm nâng cao, phân quyền theo agent.
+
+Bước 4.2: Module Project (3 ngày)
+bash
+# Tạo module (hoặc để trong Property)
+php artisan module:make Project
+
+# Tạo models
+cd Modules/Project
+php artisan module:make-model Project Project
+
+# Tạo migrations
+php artisan module:make-migration create_projects_table Project
+
+# Tạo controllers
+php artisan module:make-controller Api/ProjectController Project
+php artisan module:make-controller Admin/ProjectController Project
+
+# Liên kết với Property: property belongsTo project
+Kết quả: Quản lý dự án bất động sản, liên kết với property.
+
+Bước 4.3: Module Amenity (2 ngày)
+bash
+# Tạo module
+php artisan module:make Amenity
+
+# Tạo models
+cd Modules/Amenity
+php artisan module:make-model Amenity Amenity
+
+# Tạo migrations
+php artisan module:make-migration create_amenities_table Amenity
+php artisan module:make-migration create_property_amenities_table Amenity
+
+# Tạo seeder
+touch Database/Seeders/AmenitySeeder.php
+Kết quả: Quản lý tiện ích, gán cho property.
+
+Bước 4.4: Module Agent/Agency (2 ngày)
+bash
+# Không cần tạo module mới - mở rộng User module
+
+# Thêm vào Modules/User/Entities/User.php
+# Thêm relationships:
+# - agents() (hasMany)
+# - agency() (belongsTo)
+# - assignedProperties() (belongsToMany)
+
+# Thêm scopes:
+# - scopeAgents()
+# - scopeAgencies()
+# - scopeVerified()
+
+# Tạo controllers trong RealEstate:
+cd Modules/RealEstate
+php artisan module:make-controller Frontend/AgentController RealEstate
+php artisan module:make-controller Frontend/AgencyController RealEstate
+Kết quả: Agents và Agencies được quản lý qua User model.
+
+Bước 4.5: Module Favorite (1 ngày)
+bash
+# Tạo module Favorite (polymorphic)
+php artisan module:make Favorite
+
+# Tạo models
+cd Modules/Favorite
+php artisan module:make-model Favorite Favorite
+
+# Tạo migrations
+php artisan module:make-migration create_favorites_table Favorite
+
+# Tạo service
+touch Services/FavoriteService.php
+
+# Tạo controller
+php artisan module:make-controller Api/FavoriteController Favorite
+Kết quả: Yêu thích property, project, agent.
+
+Bước 4.6: Module Review (2 ngày)
+bash
+# Tạo module
+php artisan module:make Review
+
+# Tạo models
+cd Modules/Review
+php artisan module:make-model Review Review
+php artisan module:make-model ReviewRating Review
+
+# Tạo migrations
+php artisan module:make-migration create_reviews_table Review
+
+# Tạo controller
+php artisan module:make-controller Api/ReviewController Review
+
+# Tích hợp với Property, Agent
+Kết quả: Đánh giá và xếp hạng.
+
+Bước 4.7: Module Appointment (2 ngày)
+bash
+# Tạo module
+php artisan module:make Appointment
+
+# Tạo models
+cd Modules/Appointment
+php artisan module:make-model Appointment Appointment
+
+# Tạo migrations
+php artisan module:make-migration create_appointments_table Appointment
+
+# Tạo controller
+php artisan module:make-controller Api/AppointmentController Appointment
+Kết quả: Đặt lịch xem nhà, tư vấn.
+
+PHASE 5: SUPPORTING MODULES - HỖ TRỢ THÊM (Tuần 10)
+text
+┌─────────────────────────────────────────────────────────────────┐
+│          PHASE 5: SUPPORTING MODULES (Tuần 10)                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 5.1: Module Blog                                          │
+│  Bước 5.2: Module FAQ                                           │
+│  Bước 5.3: Module Page                                          │
+│  Bước 5.4: Module Contact                                       │
+│  Bước 5.5: Module SEO                                           │
+└─────────────────────────────────────────────────────────────────┘
+Bước 5.1-5.5: Các module hỗ trợ
+bash
+# Tạo nhanh các module
+for module in Blog FAQ Page Contact SEO; do
+    php artisan module:make $module
+    cd Modules/$module
+    php artisan module:make-model ${module} $module
+    php artisan module:make-migration create_${module,,}_table $module
+    php artisan module:make-controller Api/${module}Controller $module
+    cd ../..
+done
+PHASE 6: ADMIN MODULE - QUẢN TRỊ (Tuần 11)
+text
+┌─────────────────────────────────────────────────────────────────┐
+│              PHASE 6: ADMIN MODULE (Tuần 11)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 6.1: Module Admin Dashboard                               │
+│  Bước 6.2: Module System                                        │
+│  Bước 6.3: Module Backup                                        │
+│  Bước 6.4: Module Audit                                         │
+└─────────────────────────────────────────────────────────────────┘
+Bước 6.1: Admin Dashboard
+bash
+# Tạo module Admin
+php artisan module:make Admin
+
+# Tạo controllers
+cd Modules/Admin
+php artisan module:make-controller DashboardController Admin
+php artisan module:make-controller UserController Admin
+php artisan module:make-controller SettingsController Admin
+
+# Tạo các view cho admin (nếu cần)
+mkdir -p Resources/views
+PHASE 7: TESTING & OPTIMIZATION (Tuần 12)
+text
+┌─────────────────────────────────────────────────────────────────┐
+│            PHASE 7: TESTING & OPTIMIZATION (Tuần 12)            │
+├─────────────────────────────────────────────────────────────────┤
+│  Bước 7.1: Unit Tests cho từng module                          │
+│  Bước 7.2: Feature Tests                                        │
+│  Bước 7.3: Performance Testing                                  │
+│  Bước 7.4: Security Testing                                     │
+│  Bước 7.5: API Documentation                                    │
+└─────────────────────────────────────────────────────────────────┘
+bash
+# Tạo tests cho từng module
+cd Modules/Auth
+php artisan module:make-test AuthTest Auth --unit
+php artisan module:make-test AuthFeatureTest Auth
+
+# Chạy tests
+php artisan module:test Auth
+📊 TỔNG KẾT LỘ TRÌNH
+Phase	Thời gian	Modules	Số lượng
+Phase 0	Tuần 0	Thiết lập	-
+Phase 1	Tuần 1-2	Core Modules	5
+Phase 2	Tuần 3-4	Support Modules	6
+Phase 3	Tuần 5-6	Business Modules	5
+Phase 4	Tuần 7-9	Domain Modules	7
+Phase 5	Tuần 10	Supporting Modules	5
+Phase 6	Tuần 11	Admin Modules	1
+Phase 7	Tuần 12	Testing	-
+Tổng	12 tuần	29 modules	
+Các bước cho mỗi module cụ thể:
+Tạo module bằng lệnh php artisan module:make TenModule
+
+Tạo migrations cho các bảng
+
+Tạo models với đầy đủ relationships
+
+Tạo repositories cho truy vấn database
+
+Tạo services cho business logic
+
+Tạo controllers cho API endpoints
+
+Tạo requests cho validation
+
+Tạo resources cho response format
+
+Tạo policies cho phân quyền
+
+Tạo routes trong file routes/api.php của module
+
+Tạo tests cho module
+
+Tạo seeder cho dữ liệu mẫu
+
+Lưu ý quan trọng:
+Module Package (3.1) là quan trọng nhất, nên làm sớm
+
+Module Property (4.1) là linh hồn của dự án
+
+Luôn viết tests song song với code
+
+Document API ngay khi hoàn thành

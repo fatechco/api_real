@@ -1,0 +1,661 @@
+ LOG FILE: HỆ THỐNG PACKAGE & TÍNH NĂNG BẤT ĐỘNG SẢN
+text
+====================================================================
+|                                                                  |
+|   BẢN GHI KIẾN TRÚC HỆ THỐNG PACKAGE & TÍNH NĂNG BẤT ĐỘNG SẢN   |
+|                                                                  |
+|   Dự án: API RealEstate + Plugin realss                         |
+|   Ngày: 15/03/2026                                               |
+|   Phiên bản: 1.0.0                                               |
+|                                                                  |
+====================================================================
+
+┌────────────────────────────────────────────────────────────────┐
+│                        MỤC LỤC                                  │
+├────────────────────────────────────────────────────────────────┤
+│ 1. CẤU TRÚC GÓI DỊCH VỤ                                         │
+│ 2. DANH SÁCH TÍNH NĂNG THEO MODULE                              │
+│ 3. MA TRẬN TÍNH NĂNG - GÓI                                      │
+│ 4. CẤU TRÚC DATABASE                                            │
+│ 5. CẤU TRÚC MODULE                                              │
+│ 6. API ENDPOINTS                                                │
+│ 7. MIDDLEWARE & PERMISSIONS                                     │
+│ 8. LUỒNG XỬ LÝ KHI USER NÂNG CẤP                               │
+│ 9. KIỂM TRA HẠN MỨC                                             │
+│ 10. GHI CHÚ & LƯU Ý                                             │
+└────────────────────────────────────────────────────────────────┘
+1. CẤU TRÚC GÓI DỊCH VỤ (PACKAGE STRUCTURE)
+1.1. Dữ liệu gốc từ packages.data.ts
+typescript
+export const PACKAGES = [
+  // GÓI MEMBER (Cá nhân)
+  {
+    name: 'Member Cơ Bản',
+    type: 'member',
+    price: 0,
+    creditsPerMonth: 0,
+    roleName: 'member_basic',
+    limits: { listingsPerMonth: 3, vipListings: 0, teamMembers: 0, apiCalls: 0, storage: 50 },
+    features: [
+      { code: 'chat.basic', enabled: true },
+      { code: 'support.email', enabled: true }
+    ]
+  },
+  {
+    name: 'Member VIP',
+    type: 'member',
+    price: 199000,
+    creditsPerMonth: 10,
+    roleName: 'member_vip',
+    limits: { listingsPerMonth: 20, vipListings: 2, teamMembers: 0, apiCalls: 100, storage: 200 },
+    features: [
+      { code: 'chat.basic', enabled: true },
+      { code: 'listing.vip', enabled: true },
+      { code: 'report.basic', enabled: true },
+      { code: 'ai.price', enabled: true },
+      { code: 'support.priority', enabled: true }
+    ]
+  },
+
+  // GÓI AGENT (Môi giới chuyên nghiệp)
+  {
+    name: 'Agent Cơ Bản',
+    type: 'agent',
+    price: 499000,
+    creditsPerMonth: 30,
+    roleName: 'agent_basic',
+    limits: { listingsPerMonth: 50, vipListings: 5, teamMembers: 0, apiCalls: 500, storage: 500 },
+    features: [
+      { code: 'chat.basic', enabled: true },
+      { code: 'chat.agent', enabled: true },
+      { code: 'listing.vip', enabled: true },
+      { code: 'listing.urgent', enabled: true },
+      { code: 'report.basic', enabled: true },
+      { code: 'ai.price', enabled: true },
+      { code: 'support.priority', enabled: true }
+    ]
+  },
+  {
+    name: 'Agent Pro',
+    type: 'agent',
+    price: 999000,
+    creditsPerMonth: 80,
+    roleName: 'agent_pro',
+    limits: { listingsPerMonth: 200, vipListings: 20, teamMembers: 0, apiCalls: 2000, storage: 2000 },
+    features: [
+      { code: 'chat.basic', enabled: true },
+      { code: 'chat.agent', enabled: true },
+      { code: 'listing.vip', enabled: true },
+      { code: 'listing.urgent', enabled: true },
+      { code: 'listing.top', enabled: true },
+      { code: 'report.advanced', enabled: true },
+      { code: 'ai.price', enabled: true },
+      { code: 'ai.match', enabled: true },
+      { code: 'marketing.social', enabled: true },
+      { code: 'support.dedicated', enabled: true }
+    ]
+  },
+
+  // GÓI DOANH NGHIỆP (Agency nhỏ)
+  {
+    name: 'Doanh Nghiệp Cơ Bản',
+    type: 'agency',
+    price: 2990000,
+    creditsPerMonth: 200,
+    maxAgents: 5,
+    roleName: 'agency_basic',
+    limits: { listingsPerMonth: 500, vipListings: 50, teamMembers: 5, apiCalls: 5000, storage: 5000 },
+    features: [
+      { code: 'chat.basic', enabled: true },
+      { code: 'chat.agent', enabled: true },
+      { code: 'chat.team', enabled: true },
+      { code: 'listing.vip', enabled: true },
+      { code: 'listing.urgent', enabled: true },
+      { code: 'listing.top', enabled: true },
+      { code: 'report.advanced', enabled: true },
+      { code: 'team.basic', enabled: true },
+      { code: 'api.basic', enabled: true },
+      { code: 'marketing.auto', enabled: true },
+      { code: 'support.dedicated', enabled: true }
+    ]
+  },
+
+  // GÓI ĐẠI LÝ (Agency lớn) - ĐẶC QUYỀN CAO NHẤT
+  {
+    name: 'Đại Lý Cao Cấp',
+    type: 'agency',
+    price: 9990000,
+    creditsPerMonth: 1000,
+    maxAgents: 50,
+    roleName: 'agency_premium',
+    limits: { listingsPerMonth: 2000, vipListings: 200, teamMembers: 50, apiCalls: 50000, storage: 20000 },
+    features: [
+      // Full features - tất cả đều enabled
+      { code: 'chat.basic', enabled: true },
+      { code: 'chat.agent', enabled: true },
+      { code: 'chat.team', enabled: true },
+      { code: 'chat.24/7', enabled: true },
+      { code: 'listing.vip', enabled: true },
+      { code: 'listing.urgent', enabled: true },
+      { code: 'listing.top', enabled: true },
+      { code: 'report.basic', enabled: true },
+      { code: 'report.advanced', enabled: true },
+      { code: 'report.predictive', enabled: true },
+      { code: 'team.basic', enabled: true },
+      { code: 'team.pro', enabled: true },
+      { code: 'team.enterprise', enabled: true },
+      { code: 'api.basic', enabled: true },
+      { code: 'api.advanced', enabled: true },
+      { code: 'marketing.auto', enabled: true },
+      { code: 'marketing.social', enabled: true },
+      { code: 'marketing.email', enabled: true },
+      { code: 'ai.price', enabled: true },
+      { code: 'ai.match', enabled: true },
+      { code: 'support.dedicated', enabled: true }
+    ]
+  }
+];
+1.2. Các roleName tương ứng trong Spatie Permission
+Gói	Role Name	Type
+Member Cơ Bản	member_basic	member
+Member VIP	member_vip	member
+Agent Cơ Bản	agent_basic	agent
+Agent Pro	agent_pro	agent
+Doanh Nghiệp Cơ Bản	agency_basic	agency
+Đại Lý Cao Cấp	agency_premium	agency
+2. DANH SÁCH TÍNH NĂNG THEO MODULE
+2.1. MODULE CHAT (Chat System)
+Mã tính năng	Tên tính năng	Mô tả
+chat.basic	Chat cơ bản	Nhắn tin với người đăng tin
+chat.agent	Chat agent	Tư vấn trực tiếp với môi giới
+chat.team	Chat nội bộ	Chat trong team agency
+chat.24/7	Chat 24/7	Hỗ trợ tư vấn 24/7
+2.2. MODULE LISTING (Tin đăng)
+Mã tính năng	Tên tính năng	Mô tả
+listing.create	Đăng tin cơ bản	Tạo tin đăng mới
+listing.vip	Tin VIP	Tin nổi bật, ưu tiên hiển thị
+listing.urgent	Tin gấp	Đánh dấu tin cần bán gấp
+listing.top	Tin top đầu	Hiển thị đầu trang kết quả
+listing.featured	Tin nổi bật	Gắn nhãn "Nổi bật"
+2.3. MODULE REPORT (Báo cáo)
+Mã tính năng	Tên tính năng	Mô tả
+report.basic	Báo cáo cơ bản	Thống kê lượt xem, liên hệ
+report.advanced	Báo cáo nâng cao	Phân tích chi tiết, biểu đồ
+report.predictive	Dự báo thị trường	Dự đoán xu hướng giá
+2.4. MODULE AI (Trí tuệ nhân tạo)
+Mã tính năng	Tên tính năng	Mô tả
+ai.price	Định giá thông minh	AI đề xuất giá phù hợp
+ai.match	Kết nối tự động	AI gợi ý khách hàng tiềm năng
+2.5. MODULE MARKETING
+Mã tính năng	Tên tính năng	Mô tả
+marketing.auto	Đăng bài tự động	Đăng lên MXH tự động
+marketing.social	Quảng cáo MXH	Tích hợp quảng cáo FB, Google
+marketing.email	Email marketing	Gửi email chiến dịch
+2.6. MODULE TEAM (Quản lý đội nhóm)
+Mã tính năng	Tên tính năng	Mô tả
+team.basic	Quản lý team cơ bản	Thêm thành viên
+team.pro	Phân quyền team	Gán quyền cho từng thành viên
+team.enterprise	Quản lý doanh nghiệp	Quản lý phòng ban, chi nhánh
+2.7. MODULE API
+Mã tính năng	Tên tính năng	Mô tả
+api.basic	API cơ bản	Lấy dữ liệu tin đăng
+api.advanced	API nâng cao	Đồng bộ dữ liệu 2 chiều
+2.8. MODULE SUPPORT
+Mã tính năng	Tên tính năng	Mô tả
+support.email	Hỗ trợ email	Email support
+support.priority	Hỗ trợ ưu tiên	Phản hồi nhanh hơn
+support.dedicated	Hỗ trợ riêng	Account manager riêng
+3. MA TRẬN TÍNH NĂNG - GÓI
+Mã tính năng	Member CB	Member VIP	Agent CB	Agent Pro	Agency CB	Agency CC
+chat.basic	✅	✅	✅	✅	✅	✅
+chat.agent	❌	❌	✅	✅	✅	✅
+chat.team	❌	❌	❌	❌	✅	✅
+chat.24/7	❌	❌	❌	❌	❌	✅
+listing.vip	❌	✅ (2)	✅ (5)	✅ (20)	✅ (50)	✅ (200)
+listing.urgent	❌	❌	✅	✅	✅	✅
+listing.top	❌	❌	❌	✅	✅	✅
+report.basic	❌	✅	✅	✅	✅	✅
+report.advanced	❌	❌	❌	✅	✅	✅
+report.predictive	❌	❌	❌	❌	❌	✅
+ai.price	❌	✅	✅	✅	✅	✅
+ai.match	❌	❌	❌	✅	✅	✅
+marketing.social	❌	❌	❌	✅	✅	✅
+marketing.auto	❌	❌	❌	❌	✅	✅
+marketing.email	❌	❌	❌	❌	❌	✅
+team.basic	❌	❌	❌	❌	✅ (5)	✅ (50)
+team.pro	❌	❌	❌	❌	❌	✅
+team.enterprise	❌	❌	❌	❌	❌	✅
+api.basic	❌	❌	❌	❌	✅ (5k)	✅ (50k)
+api.advanced	❌	❌	❌	❌	❌	✅
+support.email	✅	✅	✅	✅	✅	✅
+support.priority	❌	✅	✅	✅	✅	✅
+support.dedicated	❌	❌	❌	✅	✅	✅
+4. CẤU TRÚC DATABASE
+4.1. Tables trong Module Package
+sql
+-- packages table
+CREATE TABLE packages (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(255),
+    type ENUM('member', 'agent', 'agency'),
+    role_name VARCHAR(100) UNIQUE,
+    price DECIMAL(10,2),
+    credits_per_month INT,
+    max_agents INT NULL,
+    is_active BOOLEAN DEFAULT true,
+    sort_order INT,
+    limits JSON, -- {listingsPerMonth, vipListings, teamMembers, apiCalls, storage}
+    features JSON, -- [{code, enabled}]
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- user_packages table
+CREATE TABLE user_packages (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT FOREIGN KEY,
+    package_id BIGINT FOREIGN KEY,
+    status ENUM('active', 'expired', 'cancelled'),
+    credits_remaining INT,
+    listings_used_this_month INT,
+    bonus_credits INT DEFAULT 0,
+    last_reset_at TIMESTAMP,
+    started_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    cancelled_at TIMESTAMP NULL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- credit_transactions table
+CREATE TABLE credit_transactions (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT FOREIGN KEY,
+    user_package_id BIGINT FOREIGN KEY,
+    type ENUM('purchase', 'usage', 'refund', 'bonus'),
+    amount INT,
+    balance_after INT,
+    description VARCHAR(255),
+    reference_type VARCHAR(50), -- property, project, api_call
+    reference_id BIGINT,
+    metadata JSON,
+    created_at TIMESTAMP
+);
+
+-- usage_logs table
+CREATE TABLE usage_logs (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT FOREIGN KEY,
+    user_package_id BIGINT FOREIGN KEY,
+    resource_type VARCHAR(50), -- listing, vip_listing, api_call
+    quantity INT,
+    deducted_credits BOOLEAN,
+    credits_used INT,
+    reference_type VARCHAR(50),
+    reference_id BIGINT,
+    metadata JSON,
+    created_at TIMESTAMP
+);
+4.2. Tables trong Module RealEstate (Liên quan)
+sql
+-- properties table (thêm cột tracking)
+ALTER TABLE properties ADD COLUMN is_vip BOOLEAN DEFAULT false;
+ALTER TABLE properties ADD COLUMN vip_expires_at TIMESTAMP NULL;
+ALTER TABLE properties ADD COLUMN is_urgent BOOLEAN DEFAULT false;
+ALTER TABLE properties ADD COLUMN is_top BOOLEAN DEFAULT false;
+ALTER TABLE properties ADD COLUMN top_expires_at TIMESTAMP NULL;
+ALTER TABLE properties ADD COLUMN views INT DEFAULT 0;
+
+-- agent_property_assignments table
+CREATE TABLE agent_property_assignments (
+    id BIGINT PRIMARY KEY,
+    agent_id BIGINT FOREIGN KEY,
+    property_id BIGINT FOREIGN KEY,
+    type ENUM('primary', 'co-agent', 'listing_agent'),
+    commission_rate DECIMAL(5,2),
+    assigned_at TIMESTAMP,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    UNIQUE(agent_id, property_id, type)
+);
+
+-- favorites polymorphic table
+CREATE TABLE favorites (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT FOREIGN KEY,
+    favorable_type VARCHAR(100), -- property, project, user
+    favorable_id BIGINT,
+    created_at TIMESTAMP,
+    INDEX(favorable_type, favorable_id),
+    UNIQUE(user_id, favorable_type, favorable_id)
+);
+5. CẤU TRÚC MODULE
+5.1. Module Package
+text
+Modules/Package/
+├── Config/
+├── Database/
+│   ├── Migrations/
+│   └── Seeders/
+│       └── PackagePermissionsSeeder.php
+├── Entities/
+│   ├── Package.php
+│   ├── UserPackage.php
+│   ├── CreditTransaction.php
+│   └── UsageLog.php
+├── Repositories/
+│   ├── PackageRepository.php
+│   └── UserPackageRepository.php
+├── Services/
+│   ├── PackageService.php
+│   └── CreditService.php
+├── Http/
+│   ├── Controllers/
+│   │   └── Api/
+│   │       ├── PackageController.php
+│   │       ├── CreditController.php
+│   │       └── PackageInfoController.php
+│   └── Middleware/
+│       └── CheckPackagePermission.php
+├── Routes/
+│   └── api.php
+└── Providers/
+    └── PackageServiceProvider.php
+5.2. Module RealEstate
+text
+Modules/RealEstate/
+├── Config/
+├── Database/
+│   ├── Migrations/
+│   └── Seeders/
+├── Entities/
+│   ├── Property.php
+│   ├── Project.php
+│   ├── PropertyCategory.php
+│   ├── PropertyType.php
+│   ├── Amenity.php
+│   ├── PropertyImage.php
+│   └── Favorite.php
+├── Repositories/
+│   └── PropertyRepository.php
+├── Services/
+│   ├── PropertyService.php
+│   └── FavoriteService.php
+├── Http/
+│   ├── Controllers/
+│   │   ├── Frontend/
+│   │   │   ├── PropertyController.php
+│   │   │   ├── ProjectController.php
+│   │   │   ├── AgentController.php
+│   │   │   ├── AgencyController.php
+│   │   │   └── FavoriteController.php
+│   │   ├── Agent/
+│   │   │   └── PropertyController.php
+│   │   └── Admin/
+│   │       └── PropertyController.php
+│   └── Requests/
+│       └── PropertyRequest.php
+├── Routes/
+│   ├── frontend.php
+│   ├── agent.php
+│   └── admin.php
+└── Providers/
+    └── RealEstateServiceProvider.php
+6. API ENDPOINTS
+6.1. Public Endpoints (Không cần đăng nhập)
+text
+GET    /api/v1/real-estate/properties
+GET    /api/v1/real-estate/properties/{id}
+GET    /api/v1/real-estate/properties/search
+GET    /api/v1/real-estate/projects
+GET    /api/v1/real-estate/projects/{id}
+GET    /api/v1/real-estate/agents
+GET    /api/v1/real-estate/agents/{id}
+GET    /api/v1/real-estate/agencies
+GET    /api/v1/real-estate/agencies/{id}
+6.2. User Endpoints (Cần đăng nhập - User thường)
+text
+GET    /api/v1/dashboard/user/real-estate/my-properties
+POST   /api/v1/dashboard/user/real-estate/properties
+PUT    /api/v1/dashboard/user/real-estate/properties/{id}
+DELETE /api/v1/dashboard/user/real-estate/properties/{id}
+POST   /api/v1/dashboard/user/real-estate/properties/{id}/vip  (cần permission)
+POST   /api/v1/dashboard/user/favorites/properties/{id}
+POST   /api/v1/dashboard/user/favorites/agents/{id}
+GET    /api/v1/dashboard/user/favorites
+6.3. Agent Endpoints (Cần role agent)
+text
+GET    /api/v1/dashboard/agent/real-estate/properties
+POST   /api/v1/dashboard/agent/real-estate/properties
+PUT    /api/v1/dashboard/agent/real-estate/properties/{id}
+DELETE /api/v1/dashboard/agent/real-estate/properties/{id}
+POST   /api/v1/dashboard/agent/real-estate/properties/{id}/vip (cần permission)
+POST   /api/v1/dashboard/agent/real-estate/properties/{id}/urgent (cần permission)
+POST   /api/v1/dashboard/agent/real-estate/properties/{id}/top (cần permission)
+GET    /api/v1/dashboard/agent/real-estate/statistics
+GET    /api/v1/dashboard/agent/real-estate/credits
+6.4. Agency Endpoints (Cần role agency)
+text
+GET    /api/v1/dashboard/agency/real-estate/properties
+GET    /api/v1/dashboard/agency/real-estate/projects
+POST   /api/v1/dashboard/agency/real-estate/projects
+GET    /api/v1/dashboard/agency/real-estate/team
+POST   /api/v1/dashboard/agency/real-estate/team/invite
+GET    /api/v1/dashboard/agency/real-estate/reports/advanced
+6.5. Package Endpoints
+text
+GET    /api/v1/packages
+GET    /api/v1/packages/{id}
+GET    /api/v1/packages/current
+POST   /api/v1/packages/purchase
+GET    /api/v1/credits/balance
+GET    /api/v1/credits/transactions
+POST   /api/v1/credits/purchase
+7. MIDDLEWARE & PERMISSIONS
+7.1. Middleware đã tạo
+php
+// Kernel.php
+protected $routeMiddleware = [
+    'package.permission' => \Modules\Package\Http\Middleware\CheckPackagePermission::class,
+];
+7.2. Cách sử dụng trong routes
+php
+// Yêu cầu permission cụ thể
+Route::middleware(['package.permission:listing.vip'])->group(function () {
+    Route::post('properties/{id}/vip', [PropertyController::class, 'markAsVip']);
+});
+
+// Kết hợp nhiều permissions
+Route::middleware(['package.permission:report.advanced|report.predictive'])->group(function () {
+    Route::get('reports/analytics', [ReportController::class, 'analytics']);
+});
+
+// Kiểm tra trong controller
+public function markAsVip($id)
+{
+    if (!auth()->user()->can('listing.vip')) {
+        return response()->json(['error' => 'Bạn cần nâng cấp gói VIP'], 403);
+    }
+    // ... xử lý
+}
+8. LUỒNG XỬ LÝ KHI USER NÂNG CẤP GÓI
+text
+┌─────────────────────────────────────────────────────────────────┐
+│                    USER NÂNG CẤP GÓI                            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  1. User chọn gói muốn nâng cấp                                 │
+│     POST /api/v1/packages/purchase                              │
+│     { package_id: 2, payment_method: 'vnpay' }                  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  2. PackageService xử lý                                        │
+│     - Deactivate package cũ                                     │
+│     - Tạo UserPackage mới (status = 'pending')                  │
+│     - Gọi Payment module để xử lý thanh toán                    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  3. Thanh toán thành công                                       │
+│     - Update UserPackage: status = 'active'                     │
+│     - started_at = now()                                        │
+│     - expires_at = now()->addMonth()                            │
+│     - credits_remaining = package.credits_per_month            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  4. Gán permissions cho user                                    │
+│     - Xóa role cũ                                               │
+│     - Gán role mới: $user->assignRole($package->role_name)     │
+│     - Sync permissions từ package                               │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  5. Ghi nhận giao dịch credits                                  │
+│     - Tạo CreditTransaction: type = 'purchase'                  │
+│     - amount = package.credits_per_month                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  6. Kết quả trả về cho user                                     │
+│     {                                                           │
+│       success: true,                                            │
+│       package: {...},                                           │
+│       permissions: [...],                                       │
+│       credits: 30,                                              │
+│       expires_at: '2026-04-15'                                  │
+│     }                                                           │
+└─────────────────────────────────────────────────────────────────┘
+9. KIỂM TRA HẠN MỨC
+9.1. Kiểm tra trước khi đăng tin
+php
+public function store(PropertyRequest $request)
+{
+    $user = auth()->user();
+    
+    // Kiểm tra hạn mức
+    $remaining = Property::getRemainingQuota($user->id);
+    
+    if ($remaining <= 0) {
+        return response()->json([
+            'error' => 'Bạn đã hết hạn mức đăng tin tháng này',
+            'upgrade_suggestions' => PackageService::getUpgradeSuggestions($user->id)
+        ], 403);
+    }
+    
+    // Kiểm tra nếu là VIP
+    if ($request->is_vip) {
+        if (!$user->can('listing.vip')) {
+            return response()->json([
+                'error' => 'Gói hiện tại không hỗ trợ tin VIP'
+            ], 403);
+        }
+        
+        // Kiểm tra còn VIP quota không
+        $vipUsed = $user->properties()
+            ->where('is_vip', true)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+            
+        $package = $user->activePackage;
+        $vipLimit = $package ? $package->package->limits['vipListings'] : 0;
+        
+        if ($vipUsed >= $vipLimit) {
+            return response()->json([
+                'error' => 'Bạn đã hết số lượng tin VIP trong tháng'
+            ], 403);
+        }
+    }
+    
+    // ... tiếp tục xử lý
+}
+9.2. Reset hàng tháng (Cron job)
+php
+// App\Console\Kernel.php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->call(function () {
+        PackageService::resetMonthlyUsage();
+    })->monthly();
+}
+
+// PackageService.php
+public static function resetMonthlyUsage()
+{
+    UserPackage::where('status', 'active')
+        ->chunk(100, function($packages) {
+            foreach ($packages as $package) {
+                $package->update([
+                    'listings_used_this_month' => 0,
+                    'last_reset_at' => now(),
+                    'credits_remaining' => $package->package->credits_per_month
+                ]);
+            }
+        });
+}
+10. GHI CHÚ & LƯU Ý
+10.1. Các điểm cần nhớ
+Tất cả user đều có quyền đăng tin - Tối thiểu 3 tin/tháng (member_basic)
+
+Spatie Permission quản lý permissions, Package module quản lý hạn mức và credits
+
+Credits dùng cho các tính năng đặc biệt (VIP, đẩy tin)
+
+Bonus credits có thể mua thêm riêng lẻ
+
+Team members chỉ áp dụng cho gói agency
+
+10.2. Các file quan trọng cần tạo
+text
+1. Modules/Package/Database/Seeders/PackagePermissionsSeeder.php
+2. Modules/Package/Http/Middleware/CheckPackagePermission.php
+3. Modules/Package/Services/PackageService.php
+4. Modules/Package/Services/CreditService.php
+5. Modules/RealEstate/Http/Controllers/Frontend/FavoriteController.php
+6. Modules/RealEstate/Services/FavoriteService.php
+10.3. Các lệnh cần chạy
+bash
+# Cài đặt Spatie Permission
+composer require spatie/laravel-permission
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+php artisan migrate
+
+# Tạo module Package (nếu chưa có)
+php artisan module:make Package
+
+# Tạo migrations
+php artisan module:make-migration create_packages_table Package
+php artisan module:make-migration create_user_packages_table Package
+php artisan module:make-migration create_credit_transactions_table Package
+
+# Seed permissions
+php artisan db:seed --class="Modules\Package\Database\Seeders\PackagePermissionsSeeder"
+10.4. Kế hoạch phát triển tiếp theo
+text
+Phase 1: Tuần 1-2 - Xây dựng core Package module
+- Tạo models, migrations
+- Tạo PackageService, CreditService
+- Tích hợp Spatie Permission
+
+Phase 2: Tuần 3-4 - Tích hợp vào RealEstate
+- Sửa PropertyController để kiểm tra permissions
+- Thêm middleware vào routes
+- Tạo Favorite module
+
+Phase 3: Tuần 5 - Testing & Hoàn thiện
+- Test các luồng nâng cấp gói
+- Test kiểm tra hạn mức
+- Viết unit tests
+END OF LOG FILE
+Tổng số tính năng: 32
+Số lượng gói: 6
+Số lượng modules liên quan: 3 (Package, RealEstate, User)
+Số lượng API endpoints dự kiến: 45+

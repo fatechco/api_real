@@ -1,0 +1,8 @@
+{
+    "Auth": true,
+    "User": true,
+    "Location": true,
+    "Blog": true,
+    "Package": true,
+    "RealEstate": true
+}

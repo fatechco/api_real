@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 namespace App\Http\Requests;
 
 use App\Exports\ParcelOrderReportExport;
@@ -19,7 +17,6 @@ class BaseRequest extends FormRequest
     use ApiResponse;
 
     /**
-     * Если хотите изменить, меняйте внутри своего класса. Этот не трогать.
      * Determine if the user is authorized to make this request.
      *
      * @return bool
