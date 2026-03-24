@@ -1,14 +1,10 @@
 <?php
-
 namespace Modules\Location\Repositories;
 
 use App\Repositories\CoreRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Modules\Location\Models\Country;
-use Schema;
+use Modules\Location\Models\Province;
 
 class CountryRepository extends CoreRepository
 {
@@ -17,71 +13,67 @@ class CountryRepository extends CoreRepository
         return Country::class;
     }
 
-    /**
-     * @param array $filter
-     * @return LengthAwarePaginator
-     */
     public function paginate(array $filter): LengthAwarePaginator
     {
         $column = $filter['column'] ?? 'id';
-        $sort   = $filter['sort'] ?? 'desc';
-
-        if ($column !== 'id') {
-            $column = Schema::hasColumn('countries', $column) ? $column : 'id';
-        }
+        $sort = $filter['sort'] ?? 'desc';
 
         return Country::filter($filter)
-            ->with([
-                'translation' => fn($query) => $query->where('locale', $this->language),
-            ])
-            ->withCount([
-                'cities' => fn($q) => $q->when(data_get($filter, 'has_price'),  fn($q) => $q->whereHas('deliveryPrice'))
-            ])
-            ->when(data_get($filter, 'country_id'), function ($query, $id) use ($sort) {
-                    $query->orderByRaw(DB::raw("FIELD(id, $id) $sort"));
-                },
-                fn($q) => $q->orderBy($column, $sort)
-            )
-            ->paginate($filter['perPage'] ?? 10);
+            ->with(['translation'])
+            ->orderBy($column, $sort)
+            ->paginate($filter['perPage'] ?? 15);
     }
 
-    /**
-     * @param Country $model
-     * @return Country
-     */
-    public function show(Country $model): Country
+    public function show(Country $country, array $filter): Country
     {
-        return $model->load([
-            'galleries',
-            'region.translation' => fn($query) => $query
-                ->where('locale', $this->language),
-            'translation' => fn($query) => $query
-                ->where('locale', $this->language),
+        return $country->load([
             'translations',
-            'city.translation' => fn($query) => $query
-                ->where('locale', $this->language),
+            'provinces' => function($q) use ($filter) {
+                $q->with(['translation'])
+                  ->when(data_get($filter, 'search'), function($query, $search) {
+                      $query->whereHas('translations', function($t) use ($search) {
+                          $t->where('name', 'like', "%{$search}%");
+                      });
+                  })
+                  ->orderBy('order');
+            }
         ]);
     }
 
     /**
-     * @param int $id
-     * @param array $filter
-     * @return Builder|Model|null
+     * Get provinces by country ID with pagination
      */
-    public function checkCountry(int $id, array $filter): Builder|Model|null
+    public function getProvinces(int $countryId, array $filter): LengthAwarePaginator
     {
-        $city = data_get($filter, 'city');
+        return Province::with(['translation'])
+            ->where('country_id', $countryId)
+            ->filter($filter)
+            ->orderBy('order')
+            ->paginate($filter['perPage'] ?? 15);
+    }
+
+    /**
+     * Get all provinces by country ID without pagination
+     */
+    public function getAllProvinces(int $countryId, array $filter): \Illuminate\Support\Collection
+    {
+        return Province::with(['translation'])
+            ->where('country_id', $countryId)
+            ->filter($filter)
+            ->orderBy('order')
+            ->get();
+    }
+
+    public function checkCountry(int $id, array $filter): ?Country
+    {
+        $province = data_get($filter, 'province');
 
         return Country::with([
-            'city.translation' => fn($q) => $q
-                ->where('title', 'like', "%$city%")
-                ->where('locale', $this->language)
+            'provinces.translation' => fn($q) => $q->where('name', 'like', "%$province%")
         ])
-            ->whereHas('city.translation', function ($query) use ($city) {
-                $query
-                    ->where('title', 'like', "%$city%")
-                    ->where('locale', $this->language);
+            ->whereHas('provinces.translation', function ($query) use ($province) {
+                $query->where('name', 'like', "%$province%");
             })
-            ->firstWhere('id', $id);
+            ->find($id);
     }
 }

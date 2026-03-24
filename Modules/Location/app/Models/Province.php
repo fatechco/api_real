@@ -1,92 +1,88 @@
 <?php
-
 namespace Modules\Location\Models;
 
-use App\Traits\Countries;
-use App\Traits\Regions;
-use Eloquent;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Collection;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-/**
- * App\Models\City
- *
- * @property int $id
- * @property int $country_id
- * @property boolean $active
- * @property District|null $district
- * @property Collection|District[] $districts
- * @property Collection|ProvinceTranslation[] $translations
- * @property ProvinceTranslation|null $translation
- * @property int|null $translations_count
- * @method static Builder|self active()
- * @method static Builder|self filter(array $filter)
- * @method static Builder|self newModelQuery()
- * @method static Builder|self newQuery()
- * @method static Builder|self query()
- * @method static Builder|self whereId($value)
- * @method static Builder|self whereCategoryId($value)
- * @mixin Eloquent
- */
-class Province extends Model
+class Province extends Model implements TranslatableContract
 {
-    use Countries;
+    use Translatable;
 
     public $guarded = ['id'];
     public $timestamps = false;
-
-    public $casts = [
-        'active'    => 'bool',
+    
+    public $translatedAttributes = ['name'];
+    
+    protected $casts = [
+        'active' => 'bool',
     ];
-
-    public function translations(): HasMany
+    
+    /**
+     * Relationships
+     */
+    public function country(): BelongsTo
     {
-        return $this->hasMany(ProvinceTranslation::class);
+        return $this->belongsTo(Country::class);
     }
-
-    public function translation(): HasOne
-    {
-        return $this->hasOne(ProvinceTranslation::class);
-    }
-
-    public function district(): HasOne
-    {
-        return $this->hasOne(District::class);
-    }
-
+    
     public function districts(): HasMany
     {
         return $this->hasMany(District::class);
     }
-
-    public function scopeActive($query): Builder
+    
+    /**
+     * Accessors
+     */
+    public function getNameAttribute(): ?string
     {
-        /** @var City $query */
+        return $this->translateOrDefault(app()->getLocale())?->name ?? $this->code;
+    }
+    
+    public function getTypeLabelAttribute(): string
+    {
+        $types = [
+            'city' => trans('location.city'),
+            'province' => trans('location.province'),
+            'state' => trans('location.state'),
+        ];
+        return $types[$this->type] ?? $this->type;
+    }
+    
+    /**
+     * Scopes
+     */
+    public function scopeActive(Builder $query): Builder
+    {
         return $query->where('active', true);
     }
-
-    public function scopeFilter($query, array $filter): void
+    
+    public function scopeByCountry(Builder $query, $countryId): Builder
     {
-        $query
-            ->when(request()->is('api/v1/rest/*') && request('lang'), function ($q) {
-                $q->whereHas('translation', fn($query) => $query->where(function ($q) {
-
-                    
-
-                    $q->where('locale', request('lang'));
-
-                }));
-            })
-            ->when(data_get($filter, 'country_id'), fn($q, $countryId) => $q->where('country_id', $countryId))
+        return $query->where('country_id', $countryId);
+    }
+    
+    public function scopeFilter(Builder $query, array $filter): Builder
+    {
+        return $query
+            ->when(data_get($filter, 'country_id'), fn($q, $id) => $q->where('country_id', $id))
+            ->when(data_get($filter, 'code'), fn($q, $code) => $q->where('code', $code))
             ->when(isset($filter['active']), fn($q) => $q->where('active', $filter['active']))
+            ->when(data_get($filter, 'type'), fn($q, $type) => $q->where('type', $type))
             ->when(data_get($filter, 'search'), function ($query, $search) {
-                $query->whereHas('translations', function ($q) use ($search) {
-                    $q
-                        ->where(fn($q) => $q->where('title', 'LIKE', "%$search%")->orWhere('id', $search))
-                        ->select('id', 'province_id', 'locale', 'title');
+                $query->where(function($q) use ($search) {
+                    $q->where('code', 'LIKE', "%$search%")
+                      ->orWhereHas('translations', function($t) use ($search) {
+                          $t->where('name', 'LIKE', "%$search%");
+                      });
+                });
+            })
+            ->when(data_get($filter, 'lang'), function ($query, $locale) {
+                $query->with('translations', function($q) use ($locale) {
+                    $q->where('locale', $locale);
                 });
             });
     }

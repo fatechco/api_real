@@ -98,7 +98,7 @@ return new class extends Migration
             $table->index(['user_id', 'status']);
             $table->index(['country_id', 'province_id', 'district_id']);
             $table->index(['price', 'area']);
-            $table->index(['transaction_type', 'status']);
+            $table->index(['type', 'status']);
             $table->index('is_featured');
             $table->index('is_vip');
             $table->index('published_at');

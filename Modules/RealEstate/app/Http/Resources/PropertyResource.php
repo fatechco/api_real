@@ -12,11 +12,10 @@ class PropertyResource extends JsonResource
         return [
             'id' => $this->id,
             'uuid' => $this->uuid,
-            'title' => $this->getTranslation('title', $locale),
+            'title' => $this->translate($locale)->title,
             'slug' => $this->slug,
-            'description' => $this->getTranslation('description', $locale),
-            'content' => $this->getTranslation('content', $locale),
-            
+            'description' => $this->translate($locale)->description,
+            'content' => $this->translate($locale)->content,
             'user' => $this->whenLoaded('user', function() {
                 return [
                     'id' => $this->user->id,
@@ -40,14 +39,12 @@ class PropertyResource extends JsonResource
             
             'category' => $this->whenLoaded('category', function() use ($locale) {
                 return [
-                    'id' => $this->category->id,
-                    'name' => $this->category->getTranslation('name', $locale),
+                    'name' => $this->category->translate($locale)->name,
                     'slug' => $this->category->slug
                 ];
             }),
             'type' => $this->whenLoaded('type', function() {
                 return [
-                    'id' => $this->type->id,
                     'name' => $this->type->name,
                     'slug' => $this->type->slug
                 ];
@@ -96,7 +93,7 @@ class PropertyResource extends JsonResource
             'is_vip' => $this->is_vip,
             'is_vip_active' => $this->is_vip_active,
             'vip_expires_at' => $this->vip_expires_at?->format('Y-m-d H:i:s'),
-            'vip_remaining_days' => $this->getRemainingVipDays(),
+           // 'vip_remaining_days' => $this->getRemainingVipDays(),
             'is_urgent' => $this->is_urgent,
             'is_top' => $this->is_top,
             'is_top_active' => $this->is_top_active,
@@ -163,11 +160,11 @@ class PropertyResource extends JsonResource
             'can_delete' => $this->when(auth()->check(), function() {
                 return $this->canEdit(auth()->id());
             }),
-            'is_favorited' => $this->when(auth()->check(), function() {
+           /* 'is_favorited' => $this->when(auth()->check(), function() {
                 return $this->favoritedBy()
                     ->where('user_id', auth()->id())
                     ->exists();
-            })
+            })*/
         ];
     }
 }

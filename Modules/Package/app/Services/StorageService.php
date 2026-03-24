@@ -8,17 +8,17 @@ use Modules\RealEstate\Models\Property;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Intervention\Image\ImageManager;
-use FFMpeg\FFMpeg;
+//use FFMpeg\FFMpeg;
 
 class StorageService
 {
     protected $imageManager;
-    protected $ffmpeg;
+    //protected $ffmpeg;
     
     public function __construct()
     {
         $this->imageManager = ImageManager::gd();
-        $this->ffmpeg = FFMpeg::create();
+       // $this->ffmpeg = FFMpeg::create();
     }
     
     /**
@@ -116,7 +116,7 @@ class StorageService
             $result['thumbnail_path'] = $this->createThumbnail($image);
         }
         
-        if ($type === 'video' && $limits['videoDuration'] > 0) {
+       /* if ($type === 'video' && $limits['videoDuration'] > 0) {
             // Cắt video nếu quá dài
             $video = $this->ffmpeg->open($file->getPathname());
             $duration = $video->getStreams()->videos()->first()->get('duration');
@@ -131,7 +131,7 @@ class StorageService
             
             // Tạo thumbnail từ video
             $result['thumbnail_path'] = $this->extractVideoThumbnail($video);
-        }
+        }*/
         
         return $result;
     }

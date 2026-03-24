@@ -71,7 +71,6 @@ return new class extends Migration
             $table->softDeletes();
             
             // Indexes
-            $table->index(['fileable_type', 'fileable_id']);
             $table->index(['user_id', 'file_category']);
             $table->index('status');
             $table->index('hash');

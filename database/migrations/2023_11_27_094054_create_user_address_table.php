@@ -25,10 +25,9 @@ class CreateUserAddressTable extends Migration
             $table->string('zipcode')->nullable();
             $table->string('street_house_number')->nullable();
             $table->string('additional_details', 191)->nullable();
-            $table->foreignId('region_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('country_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('city_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('area_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('province_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('district_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
         });
     }
 

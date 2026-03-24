@@ -17,10 +17,7 @@ class CreateWarehousesTable extends Migration
         Schema::create('warehouses', function (Blueprint $table) {
             $table->id();
             $table->boolean('active')->default(false);
-            $table->foreignId('region_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('country_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('city_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-            $table->foreignId('area_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
             $table->jsonb('address');
             $table->string('location');
             $table->string('img')->nullable();

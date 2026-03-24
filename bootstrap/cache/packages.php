@@ -1,4 +1,11 @@
 <?php return array (
+  'astrotomic/laravel-translatable' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Astrotomic\\Translatable\\TranslatableServiceProvider',
+    ),
+  ),
   'barryvdh/laravel-debugbar' => 
   array (
     'aliases' => 

@@ -10,14 +10,12 @@ use Illuminate\Http\JsonResponse;
 
 class PackageController extends Controller
 {
-    protected string $language;
-
+   
     public function __construct(
         private PackageRepository $repository
     )
     {
         parent::__construct();
-        $this->language = request()->header('Accept-Language') ?? 'en';
     }
 
     /**

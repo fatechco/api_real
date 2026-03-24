@@ -16,10 +16,8 @@ class CreateShopLocationsTable extends Migration
         Schema::create('shop_locations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('shop_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('region_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('country_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-            $table->foreignId('city_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-            $table->foreignId('area_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
+   
             $table->timestamps();
         });
     }

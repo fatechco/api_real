@@ -29,11 +29,8 @@ class CreateCartsTable extends Migration
                 ->constrained()
                 ->nullOnDelete();
 
-            $table->foreignId('region_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('country_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-            $table->foreignId('city_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-            $table->foreignId('area_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-
+            
             $table->double('rate')->default(1);
             $table->boolean('group')->default(false);
             $table->timestamps();

@@ -6,6 +6,7 @@ use Modules\RealEstate\Models\Property;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 
 class PropertyRepository extends CoreRepository
 {
@@ -14,33 +15,16 @@ class PropertyRepository extends CoreRepository
         return Property::class;
     }
 
-    /**
-     * Get model instance with language scope
-     */
-    protected function model()
-    {
-        return parent::model()->with([
-            'translations' => fn($q) => $q->where('locale', $this->language),
-            'category.translations' => fn($q) => $q->where('locale', $this->language),
-            'type.translations' => fn($q) => $q->where('locale', $this->language),
-            'amenities.translations' => fn($q) => $q->where('locale', $this->language),
-        ]);
-    }
+
 
     /**
      * Paginate properties with filters
      */
     public function paginate(array $filter): LengthAwarePaginator
     {
-        $query = $this->model()->with([
-            'user',
-            'project',
-            'category',
-            'type',
-            'primaryImage',
-            'amenities',
-            'assignedAgents',
-        ]);
+
+     
+        $query = $this->model()->query();
 
         // Apply filters
         $query = $this->applyFilters($query, $filter);
@@ -60,7 +44,7 @@ class PropertyRepository extends CoreRepository
         if ($keyword = data_get($filter, 'keyword')) {
             $query->where(function($q) use ($keyword) {
                 // Search in main table
-                $q->where('address', 'like', "%{$keyword}%")
+                $q->where('full_address', 'like', "%{$keyword}%")
                   ->orWhere('project_name', 'like', "%{$keyword}%");
                 
                 // Search in translations
@@ -76,11 +60,6 @@ class PropertyRepository extends CoreRepository
             $query->where('category_id', $categoryId);
         }
 
-        // Type filter
-        if ($typeId = data_get($filter, 'type_id')) {
-            $query->where('type_id', $typeId);
-        }
-
         // Project filter
         if ($projectId = data_get($filter, 'project_id')) {
             $query->where('project_id', $projectId);
@@ -91,22 +70,30 @@ class PropertyRepository extends CoreRepository
             $query->where('user_id', $userId);
         }
 
-        // Location filters
-        if ($city = data_get($filter, 'city')) {
-            $query->where('city', $city);
+        // Location filters using hierarchy IDs
+        if ($countryId = data_get($filter, 'country_id')) {
+            $query->where('country_id', $countryId);
         }
 
-        if ($district = data_get($filter, 'district')) {
-            $query->where('district', $district);
+        if ($provinceId = data_get($filter, 'province_id')) {
+            $query->where('province_id', $provinceId);
+        }
+
+        if ($districtId = data_get($filter, 'district_id')) {
+            $query->where('district_id', $districtId);
+        }
+
+        if ($wardId = data_get($filter, 'ward_id')) {
+            $query->where('ward_id', $wardId);
         }
 
         // Price range
         if ($priceMin = data_get($filter, 'price_min')) {
-            $query->where('price', '>=', $priceMin * $this->currency());
+            $query->where('price', '>=', $priceMin);
         }
 
         if ($priceMax = data_get($filter, 'price_max')) {
-            $query->where('price', '<=', $priceMax * $this->currency());
+            $query->where('price', '<=', $priceMax);
         }
 
         // Area range
@@ -132,8 +119,13 @@ class PropertyRepository extends CoreRepository
             $query->where('furnishing', $furnishing);
         }
 
-        if ($transactionType = data_get($filter, 'transaction_type')) {
-            $query->where('transaction_type', $transactionType);
+        if ($legalStatus = data_get($filter, 'legal_status')) {
+            $query->where('legal_status', $legalStatus);
+        }
+
+        // Transaction type (sale/rent)
+        if ($type = data_get($filter, 'type')) {
+            $query->where('type', $type);
         }
 
         // Status filter
@@ -145,11 +137,19 @@ class PropertyRepository extends CoreRepository
 
         // Special flags
         if (data_get($filter, 'is_vip')) {
-            $query->vip();
+            $query->where('is_vip', true);
         }
 
         if (data_get($filter, 'is_featured')) {
             $query->where('is_featured', true);
+        }
+
+        if (data_get($filter, 'is_urgent')) {
+            $query->where('is_urgent', true);
+        }
+
+        if (data_get($filter, 'is_top')) {
+            $query->where('is_top', true);
         }
 
         // Amenities filter (must have all selected amenities)
@@ -170,7 +170,7 @@ class PropertyRepository extends CoreRepository
     {
         $sortBy = data_get($filter, 'sort_by', 'created_at');
         $sortOrder = data_get($filter, 'sort_order', 'desc');
-
+      
         switch ($sortBy) {
             case 'price_asc':
                 $query->orderBy('price', 'asc');
@@ -193,12 +193,6 @@ class PropertyRepository extends CoreRepository
             case 'popular':
                 $query->orderBy('views', 'desc');
                 break;
-            case 'title_asc':
-                $query->orderByTranslation('title', 'asc');
-                break;
-            case 'title_desc':
-                $query->orderByTranslation('title', 'desc');
-                break;
             default:
                 $query->orderBy($sortBy, $sortOrder);
         }
@@ -216,11 +210,9 @@ class PropertyRepository extends CoreRepository
                 'user',
                 'project',
                 'category.translations' => fn($q) => $q->where('locale', $this->language),
-                'type.translations' => fn($q) => $q->where('locale', $this->language),
+                'translations',
                 'images',
                 'amenities.translations' => fn($q) => $q->where('locale', $this->language),
-                'assignedAgents',
-                'primaryAgent',
                 'reviews' => fn($q) => $q->with('user')->latest(),
             ])
             ->find($id);
@@ -236,11 +228,9 @@ class PropertyRepository extends CoreRepository
                 'user',
                 'project',
                 'category.translations' => fn($q) => $q->where('locale', $this->language),
-                'type.translations' => fn($q) => $q->where('locale', $this->language),
+                'translations',
                 'images',
                 'amenities.translations' => fn($q) => $q->where('locale', $this->language),
-                'assignedAgents',
-                'primaryAgent',
                 'reviews' => fn($q) => $q->with('user')->latest(),
             ])
             ->where('uuid', $uuid)
@@ -253,7 +243,7 @@ class PropertyRepository extends CoreRepository
     public function getFeatured(int $limit = 10)
     {
         return $this->model()
-            ->with(['primaryImage', 'category', 'type'])
+            ->with(['primaryImage', 'category'])
             ->where('is_featured', true)
             ->where('status', 'available')
             ->inRandomOrder()
@@ -267,8 +257,8 @@ class PropertyRepository extends CoreRepository
     public function getVip(int $limit = 10)
     {
         return $this->model()
-            ->with(['primaryImage', 'category', 'type'])
-            ->vip()
+            ->with(['primaryImage', 'category'])
+            ->where('is_vip', true)
             ->where('status', 'available')
             ->inRandomOrder()
             ->limit($limit)
@@ -281,15 +271,15 @@ class PropertyRepository extends CoreRepository
     public function getSimilar(Property $property, int $limit = 6)
     {
         return $this->model()
-            ->with(['primaryImage', 'category', 'type'])
+            ->with(['primaryImage', 'category'])
             ->where('id', '!=', $property->id)
             ->where('status', 'available')
             ->where(function($q) use ($property) {
                 $q->where('category_id', $property->category_id)
-                  ->orWhere('city', $property->city)
-                  ->orWhere('district', $property->district)
+                  ->orWhere('province_id', $property->province_id)
+                  ->orWhere('district_id', $property->district_id)
                   ->orWhereHas('translations', function($t) use ($property) {
-                      $t->whereIn('locale', [$this->language])
+                      $t->where('locale', $this->language)
                         ->where(function($sub) use ($property) {
                             $sub->where('title', 'like', "%{$property->title}%")
                                  ->orWhere('description', 'like', "%{$property->description}%");
@@ -308,7 +298,7 @@ class PropertyRepository extends CoreRepository
     {
         $query = $this->model()
             ->where('user_id', $userId)
-            ->with(['primaryImage', 'category', 'type']);
+            ->with(['primaryImage', 'category']);
 
         if ($status = data_get($filter, 'status')) {
             $query->where('status', $status);
@@ -318,13 +308,38 @@ class PropertyRepository extends CoreRepository
             $query->where(function($q) use ($search) {
                 $q->whereHas('translations', function($t) use ($search) {
                     $t->where('title', 'like', "%{$search}%");
-                })->orWhere('address', 'like', "%{$search}%");
+                })->orWhere('full_address', 'like', "%{$search}%");
             });
         }
 
         $sortBy = data_get($filter, 'sort_by', 'created_at');
         $sortOrder = data_get($filter, 'sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
+      
+        switch ($sortBy) {
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'area_asc':
+                $query->orderBy('area', 'asc');
+                break;
+            case 'area_desc':
+                $query->orderBy('area', 'desc');
+                break;
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'popular':
+                $query->orderBy('views', 'desc');
+                break;
+            default:
+                $query->orderBy($sortBy, $sortOrder);
+        }
 
         return $query->paginate(data_get($filter, 'per_page', 15));
     }
@@ -369,12 +384,12 @@ class PropertyRepository extends CoreRepository
             ->whereNotNull('longitude')
             ->where('status', 'available');
 
-        if ($city = data_get($filter, 'city')) {
-            $query->where('city', $city);
+        if ($provinceId = data_get($filter, 'province_id')) {
+            $query->where('province_id', $provinceId);
         }
 
-        if ($district = data_get($filter, 'district')) {
-            $query->where('district', $district);
+        if ($districtId = data_get($filter, 'district_id')) {
+            $query->where('district_id', $districtId);
         }
 
         if ($categoryId = data_get($filter, 'category_id')) {

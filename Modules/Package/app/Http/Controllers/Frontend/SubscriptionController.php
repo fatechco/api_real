@@ -16,8 +16,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SubscriptionController extends Controller
 {
-    protected string $language;
-
+   
     public function __construct(
         private UserPackageRepository $userPackageRepository,
         private CreditTransactionRepository $creditTransactionRepository,
@@ -26,7 +25,6 @@ class SubscriptionController extends Controller
     )
     {
         parent::__construct();
-        $this->language = request()->header('Accept-Language') ?? 'en';
         $this->middleware('auth:sanctum');
     }
 

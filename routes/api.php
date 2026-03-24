@@ -218,13 +218,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
 
         Route::get('pages/paginate',                [Rest\PageController::class, 'index']);
         Route::get('pages/{type}',                  [Rest\PageController::class, 'show'])
-            ->where('type', implode('|', Page::TYPES));
-
-        Route::apiResource('regions',   Rest\RegionController::class)->only(['index', 'show']);
-        Route::get('check/countries/{id}',        [Rest\CountryController::class, 'checkCountry']);
-        Route::apiResource('countries', Rest\CountryController::class)->only(['index', 'show']);
-        Route::apiResource('cities',    Rest\CityController::class)->only(['index', 'show']);
-        Route::apiResource('areas',     Rest\AreaController::class)->only(['index', 'show']);
+            ->where('type', implode('|', Page::TYPES));   
+        
+        
         Route::get('filter',                      [Rest\FilterController::class, 'filter']);
         Route::get('shop-filter',                 [Rest\FilterController::class, 'shopFilter']);
         Route::get('search',                      [Rest\FilterController::class, 'search']);
@@ -406,7 +402,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
             Route::post('paystack-process',      [Payment\PayStackController::class,     'processTransaction']);
             Route::post('paytabs-process',       [Payment\PayTabsController::class,      'processTransaction']);
             Route::post('flutter-wave-process',  [Payment\FlutterWaveController::class,  'processTransaction']);
-            Route::post('mercado-pago-process',  [Payment\MercadoPagoController::class,  'processTransaction']);
+       //     Route::post('mercado-pago-process',  [Payment\MercadoPagoController::class,  'processTransaction']);
             Route::post('paypal-process',        [Payment\PayPalController::class,       'processTransaction']);
             Route::post('moya-sar-process',      [Payment\MoyasarController::class,      'processTransaction']);
             Route::post('mollie-process',        [Payment\MollieController::class,       'processTransaction']);
@@ -1187,30 +1183,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
             Route::get('model/logs/{id}',     [Admin\ModelLogController::class, 'show']);
             Route::get('model/logs/paginate', [Admin\ModelLogController::class, 'paginate']);
 
-            /* Regions */
-            Route::apiResource('regions',  Admin\RegionController::class);
-            Route::get('region/{id}/active', [Admin\RegionController::class, 'changeActive']);
-            Route::delete('regions/delete',  [Admin\RegionController::class, 'destroy']);
-            Route::get('regions/drop/all',   [Admin\RegionController::class, 'dropAll']);
-
-            /* Countries */
-            Route::apiResource('countries', Admin\CountryController::class);
-            Route::get('country/{id}/active', [Admin\CountryController::class, 'changeActive']);
-            Route::delete('countries/delete', [Admin\CountryController::class, 'destroy']);
-            Route::get('countries/drop/all',  [Admin\CountryController::class, 'dropAll']);
-
-            /* Cities */
-            Route::apiResource('cities', Admin\CityController::class);
-            Route::get('city/{id}/active', [Admin\CityController::class, 'changeActive']);
-            Route::delete('cities/delete', [Admin\CityController::class, 'destroy']);
-            Route::get('cities/drop/all',  [Admin\CityController::class, 'dropAll']);
-
-            /* Areas */
-            Route::apiResource('areas',  Admin\AreaController::class);
-            Route::get('area/{id}/active', [Admin\AreaController::class, 'changeActive']);
-            Route::delete('areas/delete',  [Admin\AreaController::class, 'destroy']);
-            Route::get('areas/drop/all',   [Admin\AreaController::class, 'dropAll']);
-
+       
             /* Ads Package */
             Route::apiResource('ads-packages',  Admin\AdsPackageController::class);
             Route::get('ads-package/{id}/active', [Admin\AdsPackageController::class, 'changeActive']);
@@ -1383,7 +1356,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
         Route::any('paytabs/payment',      [Payment\PayTabsController::class,     'paymentWebHook']);
         Route::any('flutter-wave/payment', [Payment\FlutterWaveController::class, 'paymentWebHook']);
         Route::any('paypal/payment',       [Payment\PayPalController::class,      'paymentWebHook']);
-        Route::any('mercado-pago/payment', [Payment\MercadoPagoController::class, 'paymentWebHook']);
+      //  Route::any('mercado-pago/payment', [Payment\MercadoPagoController::class, 'paymentWebHook']);
         Route::any('moya-sar/payment',     [Payment\MoyasarController::class,     'paymentWebHook']);
         Route::any('mollie/payment',       [Payment\MollieController::class,      'paymentWebHook']);
         Route::any('maksekeskus/payment',  [Payment\MaksekeskusController::class, 'paymentWebHook']);

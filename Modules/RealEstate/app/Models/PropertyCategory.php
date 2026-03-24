@@ -4,22 +4,21 @@ namespace Modules\RealEstate\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Str;
+use Illuminate\Support\Str;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-// use Modules\RealEstate\Database\Factories\PropertyCategoryFactory;
-
-class PropertyCategory extends Model
+class PropertyCategory extends Model implements TranslatableContract
 {
-    use SoftDeletes;
+    use SoftDeletes, Translatable;
 
     protected $table = 'property_categories';
 
+    public $translatedAttributes = ['name', 'description'];
+
     protected $fillable = [
-        'name',
         'slug',
-        'description',
         'icon',
-        'image',
         'parent_id',
         'order',
         'is_active'
@@ -28,8 +27,6 @@ class PropertyCategory extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'order' => 'integer',
-        'name' => 'array',
-        'description' => 'array'
     ];
 
     protected static function boot()
@@ -38,17 +35,25 @@ class PropertyCategory extends Model
 
         static::creating(function ($category) {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->getTranslation('name', 'en'));
+                $category->slug = Str::slug($category->translateOrDefault('en')->name);
             }
         });
 
         static::updating(function ($category) {
-            if ($category->isDirty('name') && !$category->isDirty('slug')) {
-                $category->slug = Str::slug($category->getTranslation('name', 'en'));
+            if ($category->isDirty('slug')) return;
+            
+            $originalName = $category->getOriginal('name');
+            $newName = $category->name;
+            
+            if ($originalName !== $newName) {
+                $category->slug = Str::slug($category->translateOrDefault('en')->name);
             }
         });
     }
 
+    /**
+     * Relationships
+     */
     public function parent()
     {
         return $this->belongsTo(PropertyCategory::class, 'parent_id');
@@ -64,9 +69,17 @@ class PropertyCategory extends Model
         return $this->hasMany(Property::class, 'category_id');
     }
 
-    public function getTranslation(string $field, string $locale)
+    /**
+     * Accessors
+     */
+    public function getNameAttribute(): ?string
     {
-        return $this->{$field}[$locale] ?? $this->{$field}['en'] ?? '';
+        return $this->translateOrDefault(app()->getLocale())?->name;
+    }
+
+    public function getDescriptionAttribute(): ?string
+    {
+        return $this->translateOrDefault(app()->getLocale())?->description;
     }
 
     public function getFullNameAttribute(): string
@@ -82,6 +95,9 @@ class PropertyCategory extends Model
         return $this->properties()->count();
     }
 
+    /**
+     * Scopes
+     */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -90,5 +106,10 @@ class PropertyCategory extends Model
     public function scopeRoot($query)
     {
         return $query->whereNull('parent_id');
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('order');
     }
 }

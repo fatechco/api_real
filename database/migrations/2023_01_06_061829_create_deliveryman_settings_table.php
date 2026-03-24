@@ -16,10 +16,7 @@ class CreateDeliverymanSettingsTable extends Migration
         Schema::create('deliveryman_settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('region_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('country_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('city_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
-            $table->foreignId('area_id')->nullable()->constrained()->cascadeOnUpdate()->nullOnDelete();
             $table->string('type_of_technique')->nullable();
             $table->string('brand')->nullable();
             $table->string('model')->nullable();

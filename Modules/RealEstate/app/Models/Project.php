@@ -1,41 +1,61 @@
 <?php
+
 namespace Modules\RealEstate\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
+use Modules\Location\Models\Country;
+use Modules\Location\Models\Province;
+use Modules\Location\Models\District;
+use Modules\Location\Models\Ward;
 use Modules\User\Models\User;
 
-class Project extends Model
+class Project extends Model implements TranslatableContract
 {
-    use SoftDeletes;
+    use SoftDeletes, Translatable;
 
     protected $table = 'projects';
 
+    public $translatedAttributes = ['name', 'description', 'developer_name'];
+
     protected $fillable = [
-        'name',
+        'uuid',
         'slug',
-        'description',
-        'developer',
         'agency_id',
-        'developer_info',
+        'developer_id',
+        'country_id',
+        'province_id',
+        'district_id',
+        'ward_id',
         'address',
-        'city',
-        'district',
-        'ward',
+        'street',
+        'street_number',
+        'building_name',
         'latitude',
         'longitude',
         'total_area',
+        'built_area',
         'total_units',
+        'available_units',
+        'total_floors',
+        'basement_floors',
+        'min_price',
+        'max_price',
+        'price_per_m2',
         'start_date',
         'completion_date',
+        'handover_date',
         'status',
-        'images',
-        'virtual_tour',
-        'brochure_url',
-        'video_url',
         'is_featured',
+        'is_hot',
         'is_active',
+        'views',
+        'unique_views',
+        'favorites_count',
+        'inquiries_count',
         'meta_title',
         'meta_description',
         'meta_keywords'
@@ -43,21 +63,26 @@ class Project extends Model
 
     protected $casts = [
         'total_area' => 'decimal:2',
+        'built_area' => 'decimal:2',
+        'min_price' => 'decimal:2',
+        'max_price' => 'decimal:2',
+        'price_per_m2' => 'decimal:2',
         'total_units' => 'integer',
-        'start_date' => 'date',
-        'completion_date' => 'date',
+        'available_units' => 'integer',
+        'total_floors' => 'integer',
+        'basement_floors' => 'integer',
+        'views' => 'integer',
+        'unique_views' => 'integer',
+        'favorites_count' => 'integer',
+        'inquiries_count' => 'integer',
         'is_featured' => 'boolean',
+        'is_hot' => 'boolean',
         'is_active' => 'boolean',
-        'images' => 'array',
-        'developer_info' => 'array',
-        'virtual_tour' => 'array',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
-        'name' => 'array',
-        'description' => 'array',
-        'meta_title' => 'array',
-        'meta_description' => 'array',
-        'meta_keywords' => 'array'
+        'start_date' => 'date',
+        'completion_date' => 'date',
+        'handover_date' => 'date',
     ];
 
     protected static function boot()
@@ -65,185 +90,135 @@ class Project extends Model
         parent::boot();
 
         static::creating(function ($project) {
+            if (empty($project->uuid)) {
+                $project->uuid = (string) Str::uuid();
+            }
             if (empty($project->slug)) {
-                $project->slug = Str::slug($project->getTranslation('name', 'en'));
+                $project->slug = Str::slug($project->translateOrDefault('en')->name);
             }
         });
     }
 
-    public function getTranslation(string $field, string $locale)
-    {
-        return $this->{$field}[$locale] ?? $this->{$field}['en'] ?? '';
-    }
-
+    /**
+     * Relationships
+     */
     public function agency()
     {
         return $this->belongsTo(User::class, 'agency_id');
     }
 
-    public function properties()
+    public function developer()
     {
-        return $this->hasMany(Property::class);
+        return $this->belongsTo(User::class, 'developer_id');
     }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    public function province()
+    {
+        return $this->belongsTo(Province::class);
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(District::class);
+    }
+
+    public function ward()
+    {
+        return $this->belongsTo(Ward::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(File::class, 'fileable_id')
+            ->where('fileable_type', self::class)
+            ->orderBy('order');
+    }
+
+    /*public function units()
+    {
+        return $this->hasMany(ProjectUnit::class);
+    }*/
 
     public function amenities()
     {
-        return $this->belongsToMany(Amenity::class, 'project_amenities')
-                    ->withPivot(['value', 'description', 'icon', 'is_highlight', 'order'])
-                    ->withTimestamps()
-                    ->orderByPivot('order');
+        return $this->belongsToMany(Amenity::class, 'project_amenities');
     }
 
-    public function highlightedAmenities()
+    /*public function reviews()
     {
-        return $this->belongsToMany(Amenity::class, 'project_amenities')
-                    ->wherePivot('is_highlight', true)
-                    ->withPivot('value', 'description', 'icon')
-                    ->orderByPivot('order');
+        return $this->hasMany(ProjectReview::class);
+    }*/
+
+    /**
+     * Accessors
+     */
+    public function getNameAttribute(): ?string
+    {
+        return $this->translateOrDefault(app()->getLocale())?->name;
     }
 
-    public function favoritedBy()
+    public function getDescriptionAttribute(): ?string
     {
-        return $this->morphToMany(User::class, 'favorable', 'favorites');
+        return $this->translateOrDefault(app()->getLocale())?->description;
     }
 
-    public function getPrimaryImageAttribute(): ?string
+    public function getDeveloperNameAttribute(): ?string
     {
-        $images = $this->images ?? [];
-        return $images[0] ?? null;
+        return $this->translateOrDefault(app()->getLocale())?->developer_name;
     }
 
-    public function getAllImagesAttribute(): array
+    public function getFullAddressAttribute(): string
     {
-        $images = $this->images ?? [];
-        return array_map(function($image) {
-            return asset('storage/' . $image);
-        }, $images);
+        $parts = array_filter([
+            $this->address,
+            $this->ward?->name,
+            $this->district?->name,
+            $this->province?->name,
+            $this->country?->name,
+        ]);
+        
+        return implode(', ', $parts);
     }
 
-    public function getPropertyCountAttribute(): int
+    public function getPriceRangeAttribute(): string
     {
-        return $this->properties()->count();
-    }
-
-    public function getAvailablePropertyCountAttribute(): int
-    {
-        return $this->properties()->where('status', 'available')->count();
-    }
-
-    public function getPriceRangeAttribute(): array
-    {
-        $prices = $this->properties()
-            ->where('status', 'available')
-            ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
-            ->first();
-
-        return [
-            'min' => $prices->min_price ?? 0,
-            'min_formatted' => $prices->min_price ? number_format($prices->min_price) . ' ₫' : null,
-            'max' => $prices->max_price ?? 0,
-            'max_formatted' => $prices->max_price ? number_format($prices->max_price) . ' ₫' : null
-        ];
-    }
-
-    public function getAreaRangeAttribute(): array
-    {
-        $areas = $this->properties()
-            ->where('status', 'available')
-            ->selectRaw('MIN(area) as min_area, MAX(area) as max_area')
-            ->first();
-
-        return [
-            'min' => $areas->min_area ?? 0,
-            'min_formatted' => $areas->min_area ? number_format($areas->min_area, 2) . ' m²' : null,
-            'max' => $areas->max_area ?? 0,
-            'max_formatted' => $areas->max_area ? number_format($areas->max_area, 2) . ' m²' : null
-        ];
-    }
-
-    public function getBedroomTypesAttribute(): array
-    {
-        return $this->properties()
-            ->where('status', 'available')
-            ->whereNotNull('bedrooms')
-            ->distinct()
-            ->orderBy('bedrooms')
-            ->pluck('bedrooms')
-            ->map(function($bedrooms) {
-                return [
-                    'value' => $bedrooms,
-                    'label' => $bedrooms . ' BR',
-                    'count' => $this->properties()
-                        ->where('status', 'available')
-                        ->where('bedrooms', $bedrooms)
-                        ->count()
-                ];
-            })
-            ->toArray();
-    }
-
-    public function getAmenitiesGroupedAttribute(): array
-    {
-        $amenities = $this->amenities()
-            ->withPivot('description', 'icon', 'is_highlight')
-            ->get()
-            ->groupBy('category');
-
-        $result = [];
-        foreach ($amenities as $category => $items) {
-            $result[$category] = [
-                'category_name' => Amenity::getCategories()[$category] ?? $category,
-                'items' => $items->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'name' => $item->name,
-                        'icon' => $item->pivot->icon ?? $item->icon,
-                        'description' => $item->pivot->description,
-                        'value' => $item->pivot->value,
-                        'is_highlight' => $item->pivot->is_highlight
-                    ];
-                })
-            ];
+        if ($this->min_price && $this->max_price) {
+            return '$' . number_format($this->min_price) . ' - $' . number_format($this->max_price);
         }
-
-        return $result;
+        
+        if ($this->min_price) {
+            return 'From $' . number_format($this->min_price);
+        }
+        
+        if ($this->max_price) {
+            return 'Up to $' . number_format($this->max_price);
+        }
+        
+        return 'Contact for price';
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        $labels = [
             'planning' => 'Planning',
             'ongoing' => 'Ongoing',
             'completed' => 'Completed',
-            default => $this->status
-        };
+            'sold_out' => 'Sold Out',
+            'paused' => 'Paused',
+            'cancelled' => 'Cancelled',
+        ];
+        
+        return $labels[$this->status] ?? $this->status;
     }
 
-    public function getIsCompletedAttribute(): bool
-    {
-        return $this->status === 'completed';
-    }
-
-    public function getProgressAttribute(): int
-    {
-        if ($this->status === 'completed') {
-            return 100;
-        }
-
-        if (!$this->start_date || !$this->completion_date) {
-            return 0;
-        }
-
-        $total = $this->start_date->diffInDays($this->completion_date);
-        $elapsed = $this->start_date->diffInDays(now());
-
-        if ($total <= 0) {
-            return 0;
-        }
-
-        return min(100, round(($elapsed / $total) * 100));
-    }
-
+    /**
+     * Scopes
+     */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -254,39 +229,20 @@ class Project extends Model
         return $query->where('is_featured', true);
     }
 
-    public function scopeByCity($query, string $city)
-    {
-        return $query->where('city', $city);
-    }
-
-    public function scopeByStatus($query, string $status)
+    public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
     }
 
-    public function scopeByDeveloper($query, string $developer)
+    /**
+     * Helper methods
+     */
+    public function incrementViews(?int $userId = null, ?string $ip = null): void
     {
-        return $query->where('developer', 'like', "%{$developer}%");
-    }
-
-    public function scopeWithAmenities($query, array $amenityIds)
-    {
-        return $query->whereHas('amenities', function($q) use ($amenityIds) {
-            $q->whereIn('amenities.id', $amenityIds);
-        });
-    }
-
-    public function scopeNearby($query, $latitude, $longitude, $radius = 5)
-    {
-        $haversine = "(6371 * acos(cos(radians($latitude)) 
-                    * cos(radians(latitude)) 
-                    * cos(radians(longitude) - radians($longitude)) 
-                    + sin(radians($latitude)) 
-                    * sin(radians(latitude))))";
-
-        return $query->select('*')
-            ->selectRaw("{$haversine} AS distance")
-            ->whereRaw("{$haversine} <= ?", [$radius])
-            ->orderBy('distance');
+        $this->increment('views');
+        
+        if ($userId) {
+            $this->increment('unique_views');
+        }
     }
 }

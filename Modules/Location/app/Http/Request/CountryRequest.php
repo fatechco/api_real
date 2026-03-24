@@ -1,7 +1,6 @@
 <?php
-namespace Modules\Location\Http\Requests\Country;
+namespace Modules\Location\Http\Requests;
 use App\Http\Requests\BaseRequest;
-use Illuminate\Validation\Rule;
 
 class CountryRequest extends BaseRequest
 {
@@ -15,7 +14,6 @@ class CountryRequest extends BaseRequest
         return [
             'active'        => 'required|boolean',
             'code'          => 'required|string',
-            'region_id'     => ['required', 'integer', Rule::exists('regions', 'id')],
             'images'        => 'array',
             'images.*'      => 'string',
             'title'         => 'required|array',

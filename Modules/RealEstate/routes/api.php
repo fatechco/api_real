@@ -1,25 +1,51 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\RealEstate\Http\Controllers\User\PropertyController;
+use Modules\RealEstate\Http\Controllers\Frontend\PropertyController;
+
+use Modules\RealEstate\Http\Controllers\Frontend\AmenityController;
+use Modules\RealEstate\Http\Controllers\Frontend\ProjectFileController;
+use Modules\RealEstate\Http\Controllers\Frontend\PropertyCategoryController;
+use Modules\RealEstate\Http\Controllers\Frontend\PropertyFileController;
 use Modules\RealEstate\Http\Controllers\Admin\PropertyController as AdminPropertyController;
+use Modules\RealEstate\Http\Controllers\Admin\PropertyCategoryController as AdminPropertyCategoryController;
+use Modules\RealEstate\Http\Controllers\Admin\AmenityController as AdminAmenityController;
 
 // Public routes
 Route::group(['prefix' => 'v1'], function () {
-    
-    Route::prefix('properties')->group(function () {
-        Route::get('/', [PropertyController::class, 'index']);
-        Route::get('/search', [PropertyController::class, 'search']);
-        Route::get('/featured', [PropertyController::class, 'featured']);
-        Route::get('/{uuid}', [PropertyController::class, 'show']);
-        Route::get('/{property}/similar', [PropertyController::class, 'similar']);
+    Route::prefix('rest')->group(function () {
+        Route::prefix('properties')->group(function () {
+            Route::get('/', [PropertyController::class, 'index']);
+            Route::get('/search', [PropertyController::class, 'search']);
+            Route::get('/featured', [PropertyController::class, 'featured']);
+            Route::get('/{uuid}', [PropertyController::class, 'show']);
+            Route::get('/{property}/similar', [PropertyController::class, 'similar']);
+        });
+
+        // Property Category routes (public)
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [PropertyCategoryController::class, 'index']);
+            Route::get('/root', [PropertyCategoryController::class, 'root']);
+            Route::get('/{slug}', [PropertyCategoryController::class, 'show']);
+            Route::get('/{slug}/properties', [PropertyCategoryController::class, 'properties']);
+        });
+        
+        // Amenity routes (public)
+        Route::prefix('amenities')->group(function () {
+            Route::get('/', [AmenityController::class, 'index']);
+            Route::get('/popular', [AmenityController::class, 'popular']);
+            Route::get('/search', [AmenityController::class, 'search']);
+            Route::get('/{id}', [AmenityController::class, 'show']);
+            Route::get('/{slug}/properties', [AmenityController::class, 'properties']);
+        });
     });
+
     // Public file access
-    Route::get('/files/{file}/download', [FileController::class, 'download'])
+    /*Route::get('/files/{file}/download', [FileController::class, 'download'])
         ->name('files.download');
 
     Route::get('/files/private/{token}', [FileController::class, 'privateAccess'])
-    ->name('files.private');
+    ->name('files.private');*/
 });
 
 // User routes (require auth)
@@ -84,4 +110,29 @@ Route::group(['prefix' => 'v1/admin', 'middleware' => ['auth:sanctum', 'role:adm
         Route::post('/{id}/reject', [AdminPropertyController::class, 'reject']);
         Route::post('/{id}/toggle-feature', [AdminPropertyController::class, 'toggleFeature']);
     });
+
+        // Admin Property Category routes
+    Route::prefix('categories')->group(function () {
+        Route::get('/', [AdminPropertyCategoryController::class, 'index']);
+        Route::get('/tree', [AdminPropertyCategoryController::class, 'tree']);
+        Route::post('/', [AdminPropertyCategoryController::class, 'store']);
+        Route::get('/{id}', [AdminPropertyCategoryController::class, 'show']);
+        Route::put('/{id}', [AdminPropertyCategoryController::class, 'update']);
+        Route::delete('/{id}', [AdminPropertyCategoryController::class, 'destroy']);
+        Route::post('/reorder', [AdminPropertyCategoryController::class, 'reorder']);
+        Route::post('/{id}/toggle-active', [AdminPropertyCategoryController::class, 'toggleActive']);
+    });
+    
+    // Admin Amenity routes
+    Route::prefix('amenities')->group(function () {
+        Route::get('/', [AdminAmenityController::class, 'index']);
+        Route::post('/', [AdminAmenityController::class, 'store']);
+        Route::get('/{id}', [AdminAmenityController::class, 'show']);
+        Route::put('/{id}', [AdminAmenityController::class, 'update']);
+        Route::delete('/{id}', [AdminAmenityController::class, 'destroy']);
+        Route::post('/reorder', [AdminAmenityController::class, 'reorder']);
+        Route::post('/{id}/toggle-active', [AdminAmenityController::class, 'toggleActive']);
+        Route::post('/bulk-delete', [AdminAmenityController::class, 'bulkDelete']);
+    });
+    
 });

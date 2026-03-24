@@ -11,6 +11,6 @@ class LocationDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+         $this->call([USALocationSeeder::class]);
     }
 }

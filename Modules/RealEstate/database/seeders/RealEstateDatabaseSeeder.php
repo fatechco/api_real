@@ -11,6 +11,8 @@ class RealEstateDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+         $this->call([PropertyCategorySeeder::class]);
+        $this->call([AmenitySeeder::class]);
+         $this->call([PropertySeeder::class]);
     }
 }
