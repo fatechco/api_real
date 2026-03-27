@@ -1,8 +1,10 @@
 <?php
 namespace Modules\RealEstate\Http\Controllers\Frontend;
 
+use App\Helpers\ResponseError;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FilterParamsRequest;
+use App\Traits\ApiResponse;
 use Modules\RealEstate\Http\Requests\PropertyRequest;
 use Modules\RealEstate\Http\Requests\PropertySearchRequest;
 use Modules\RealEstate\Http\Resources\PropertyResource;
@@ -11,10 +13,12 @@ use Modules\RealEstate\Repositories\PropertyRepository;
 use Modules\RealEstate\Services\PropertyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Modules\RealEstate\Http\Resources\PropertyEditResource;
+use Modules\RealEstate\Http\Resources\PropertyListResource;
 
 class PropertyController extends Controller
 {
-    
+    use ApiResponse;   
     public function __construct(
         protected PropertyRepository $repository,
         protected PropertyService $service
@@ -58,8 +62,38 @@ class PropertyController extends Controller
         return PropertyResource::collection($properties);
     }
 
-    public function store(PropertyRequest $request): JsonResponse
+    
+      /**
+     * Get property for editing (authenticated)
+     */
+    public function edit(string $uuid): JsonResponse
     {
+        $property = $this->repository->findByUuid($uuid);
+
+        if (!$property) {
+            return $this->onErrorResponse([
+                'code' => ResponseError::ERROR_404,
+                'message' => __('property::property.errors.not_found', locale: $this->language)
+            ]);
+        }
+
+        // Check if user owns this property
+        if ($property->user_id !== auth()->id()) {
+            return $this->onErrorResponse([
+                'code' => ResponseError::ERROR_403,
+                'message' => __('property::property.errors.unauthorized', locale: $this->language)
+            ]);
+        }
+
+        return $this->successResponse(
+            __('property::property.messages.success', locale: $this->language),
+            new PropertyEditResource($property->load(['translations', 'images', 'amenities']))
+        );
+    }
+
+    public function store(PropertyRequest $request)
+    {
+
         $result = $this->service->create($request->validated());
 
         if (!data_get($result, 'status')) {
@@ -121,7 +155,7 @@ class PropertyController extends Controller
     public function myProperties(FilterParamsRequest $request): AnonymousResourceCollection
     {
         $properties = $this->repository->getUserProperties(auth()->id(), $request->all());
-        return PropertyResource::collection($properties);
+        return PropertyListResource::collection($properties);
     }
 
     public function similar(Property $property): AnonymousResourceCollection

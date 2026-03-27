@@ -17,46 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
-    // Methods without AuthCheck
-    Route::post('/auth/register',                       [RegisterController::class, 'register'])
-        ->middleware('sessions');
-
-    Route::post('/auth/login',                          [LoginController::class, 'login'])
-        ->middleware('sessions');
-
-    Route::post('/auth/check/phone',                    [LoginController::class, 'checkPhone'])
-        ->middleware('sessions');
-
-    Route::post('/auth/logout',                         [LoginController::class, 'logout'])
-        ->middleware('sessions');
-
-    Route::post('/auth/verify/phone',                   [VerifyAuthController::class, 'verifyPhone'])
-        ->middleware('sessions');
-
-    Route::post('/auth/resend-verify',                  [VerifyAuthController::class, 'resendVerify'])
-        ->middleware('sessions');
-
-    Route::get('/auth/verify/{hash}',                   [VerifyAuthController::class, 'verifyEmail'])
-        ->middleware('sessions');
-
-    Route::post('/auth/forgot/password',                [LoginController::class, 'forgetPassword'])
-        ->middleware('sessions');
-
-    Route::post('/auth/forgot/password/before',        [LoginController::class, 'forgetPasswordBefore'])
-        ->middleware('sessions');
-
-    Route::post('/auth/forgot/password/confirm',        [LoginController::class, 'forgetPasswordVerify'])
-        ->middleware('sessions');
-
-    Route::post('/auth/forgot/email-password',          [LoginController::class, 'forgetPasswordEmail'])
-        ->middleware('sessions');
-
-    Route::post('/auth/forgot/email-password/{hash}',   [LoginController::class, 'forgetPasswordVerifyEmail'])
-        ->middleware('sessions');
-
-//    Route::get('/login/{provider}',                   [LoginController::class,'redirectToProvider']);
-    Route::post('/auth/{provider}/callback',        [LoginController::class, 'handleProviderCallback']);
-
+    
     Route::group(['prefix' => 'install'], function () {
         Route::get('/init/check',                   [Rest\InstallController::class, 'checkInitFile']);
         Route::post('/init/set',                    [Rest\InstallController::class, 'setInitFile']);
@@ -342,12 +303,12 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
             Route::post('shop/invitation/{id}/status/change',  [User\InviteController::class, 'changeStatus']);
             Route::delete('shop/invitation/delete',            [User\InviteController::class, 'delete']);
 
-            Route::get('point/histories',                      [User\WalletController::class, 'pointHistories']);
+        //  Route::get('point/histories',                      [User\WalletController::class, 'pointHistories']);
 
-            Route::get('wallet/histories',                     [User\WalletController::class, 'walletHistories']);
-            Route::post('wallet/withdraw',                     [User\WalletController::class, 'store']);
-            Route::post('wallet/history/{uuid}/status/change', [User\WalletController::class, 'changeStatus']);
-            Route::post('wallet/send',                         [User\WalletController::class, 'send']);
+         //   Route::get('wallet/histories',                     [User\WalletController::class, 'walletHistories']);
+          //  Route::post('wallet/withdraw',                     [User\WalletController::class, 'store']);
+          //  Route::post('wallet/history/{uuid}/status/change', [User\WalletController::class, 'changeStatus']);
+          //  Route::post('wallet/send',                         [User\WalletController::class, 'send']);
 
             /* Transaction */
             Route::get('transactions/paginate',                 [User\TransactionController::class, 'paginate']);

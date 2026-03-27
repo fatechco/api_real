@@ -11,6 +11,7 @@ use Modules\Location\Models\Country;
 use Modules\Location\Models\Province;
 use Modules\Location\Models\District;
 use Modules\Location\Models\Ward;
+use Modules\User\Models\User;
 
 class Property extends Model implements TranslatableContract
 {
@@ -121,7 +122,7 @@ class Property extends Model implements TranslatableContract
      */
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function project()
@@ -154,23 +155,42 @@ class Property extends Model implements TranslatableContract
         return $this->belongsTo(Ward::class);
     }
 
-    public function primaryImage()
+   public function primaryImage()
     {
-        return $this->belongsTo(File::class, 'primary_image_id');
+        return $this->belongsTo(File::class, 'primary_image_id')
+            ->where('file_category', 'image');
+    }
+
+    /**
+     * Get primary image URL (accessor)
+     */
+    public function getPrimaryImageUrlAttribute(): ?string
+    {
+        if ($this->primaryImage) {
+            return $this->primaryImage->url;
+        }
+        
+        // Nếu không có primary_image_id, tìm ảnh đầu tiên
+        $firstImage = $this->images()->first();
+        if ($firstImage) {
+            return $firstImage->url;
+        }
+        
+        return null;
     }
 
     public function images()
     {
-        return $this->hasMany(File::class, 'fileable_id')
-            ->where('fileable_type', self::class)
+        return $this->belongsToMany(File::class, 'property_file_relations', 'property_id', 'file_id')
+            ->withPivot('order', 'is_primary', 'is_featured', 'usage_type', 'caption', 'description')
+            ->where('file_category', 'image')
             ->orderBy('order');
     }
 
     public function amenities()
     {
         return $this->belongsToMany(Amenity::class, 'property_amenities')
-                    ->withPivot('value')
-                    ->withTimestamps();
+                    ->withPivot('value');
     }
 
     public function views()

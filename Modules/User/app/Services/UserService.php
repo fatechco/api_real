@@ -6,7 +6,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Invitation;
 use App\Models\Notification;
 use App\Models\PushNotification;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use App\Traits\SetTranslations;
 use DB;
@@ -80,7 +80,7 @@ class UserService extends CoreService
                     'active' => true
                 ]);
 
-                return (new UserWalletService)->create($user);
+               // return (new UserWalletService)->create($user);
             });
 
             return [
@@ -246,7 +246,7 @@ class UserService extends CoreService
 
                 }
 
-                return $user->loadMissing(['emailSubscription', 'notifications', 'invitations', 'roles', 'wallet']);
+                return $user->loadMissing(['emailSubscription', 'notifications', 'invitations', 'roles']);
             });
 
             return [
@@ -301,7 +301,7 @@ class UserService extends CoreService
                 'data'   => [
                     'access_token'  => $user->createToken('api_token')->plainTextToken,
                     'token_type'    => 'Bearer',
-                    'user'          => UserResource::make($user->loadMissing(['wallet'])),
+                    'user'          => UserResource::make($user),
                 ],
             ];
         } catch (Exception $e) {
@@ -380,16 +380,16 @@ class UserService extends CoreService
      */
     public function delete(?array $ids = []): array
     {
-        foreach (User::with(['wallet.histories', 'transactions'])->find($ids) as $user) {
+       /* foreach (User::with(['wallet.histories', 'transactions'])->find($ids) as $user) {
 
-            /** @var User $user */
+          
             DB::table('wallet_histories')->where('created_by', $user->id)->delete();
             $user->wallet?->histories()->delete();
             $user->wallet()->delete();
             $user->transactions()->delete();
             $user->delete();
 
-        }
+        }*/
 
         return [
             'status' => true,

@@ -11,10 +11,10 @@ use App\Http\Requests\UserUpdateRequest;
 
 //use App\Http\Resources\WalletHistoryResource;
 
-use App\Repositories\WalletRepository\WalletHistoryRepository;
+//use App\Repositories\WalletRepository\WalletHistoryRepository;
 use App\Services\AuthService\UserVerifyService;
 use App\Services\UserServices\UserService;
-use App\Services\UserServices\UserWalletService;
+//use App\Services\UserServices\UserWalletService;
 
 use Exception;
 use Illuminate\Http\JsonResponse;

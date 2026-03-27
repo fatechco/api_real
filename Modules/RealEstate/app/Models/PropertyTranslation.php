@@ -9,6 +9,8 @@ class PropertyTranslation extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'property_id',
+        'locale',
         'title',
         'description',
     ];

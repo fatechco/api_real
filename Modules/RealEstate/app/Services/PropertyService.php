@@ -28,70 +28,86 @@ class PropertyService
     public function create(array $data): array
     {
         try {
+             $this->packageService->assignFreePackage(auth()->user()->id);
             return DB::transaction(function () use ($data) {
                 $user = auth()->user();
 
                 // Check package limits
-                $check = $this->packageService->canCreateListing($user->id);
+                /*$check = $this->packageService->canCreateListing($user->id);
                 if (!$check['can']) {
                     return [
                         'status' => false,
                         'message' => $check['reason']
                     ];
-                }
+                }*/
 
+                $translations = $data['translations'] ?? [];
+
+                $slug = Str::slug($translations['en']['title'] ?? 'property');
+                      // Dữ liệu để tạo property
+            $propertyData = [
+                'uuid' => (string) Str::uuid(),
+                'user_id' => $user->id,
+                'category_id' => $data['category_id'] ?? null,
+                'slug' => $slug,
+                'price' => $data['price'],
+                'is_negotiable' => $data['is_negotiable'] ?? false,
+                'area' => $data['area'],
+                'land_area' => $data['land_area'] ?? null,
+                'built_area' => $data['built_area'] ?? null,
+                'bedrooms' => $data['bedrooms'] ?? null,
+                'bathrooms' => $data['bathrooms'] ?? null,
+                'floors' => $data['floors'] ?? null,
+                'garages' => $data['garages'] ?? null,
+                'year_built' => $data['year_built'] ?? null,
+                'furnishing' => $data['furnishing'] ?? null,
+                'legal_status' => $data['legal_status'] ?? null,
+                'ownership_type' => $data['ownership_type'] ?? null,
+                'country_id' => $data['country_id'] ?? null,
+                'province_id' => $data['province_id'] ?? null,
+                'district_id' => $data['district_id'] ?? null,
+                'ward_id' => $data['ward_id'] ?? null,
+                'street' => $data['street'] ?? null,
+                'street_number' => $data['street_number'] ?? null,
+                'building_name' => $data['building_name'] ?? null,
+                'full_address' => $data['full_address'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'status' => $data['status'] ?? 'pending',
+                'type' => $data['type'],
+                'is_featured' => $data['is_featured'] ?? false,
+                'is_vip' => $data['is_vip'] ?? false,
+                'is_urgent' => $data['is_urgent'] ?? false,
+                'is_top' => $data['is_top'] ?? false,
+                'video_url' => $data['video_url'] ?? null,
+                'virtual_tour_url' => $data['virtual_tour_url'] ?? null,
+                'published_at' => now(),
+                ];
+
+
+
+                 \Log::info('Property data to create: ', $propertyData);
+            
                 // Create property
-                $property = Property::create([
-                    'uuid' => (string) Str::uuid(),
-                    'user_id' => $user->id,
-                    'project_id' => $data['project_id'] ?? null,
-                    'category_id' => $data['category_id'] ?? null,
-                    'slug' => Str::slug($data['translations']['en']['title'] ?? 'property'),
-                    'price' => $data['price'],
-                    'price_per_m2' => $data['price_per_m2'] ?? null,
-                    'is_negotiable' => $data['is_negotiable'] ?? false,
-                    'area' => $data['area'],
-                    'land_area' => $data['land_area'] ?? null,
-                    'built_area' => $data['built_area'] ?? null,
-                    'bedrooms' => $data['bedrooms'] ?? null,
-                    'bathrooms' => $data['bathrooms'] ?? null,
-                    'floors' => $data['floors'] ?? null,
-                    'garages' => $data['garages'] ?? null,
-                    'year_built' => $data['year_built'] ?? null,
-                    'furnishing' => $data['furnishing'] ?? null,
-                    'legal_status' => $data['legal_status'] ?? null,
-                    'ownership_type' => $data['ownership_type'] ?? null,
-                    'country_id' => $data['country_id'] ?? null,
-                    'province_id' => $data['province_id'] ?? null,
-                    'district_id' => $data['district_id'] ?? null,
-                    'ward_id' => $data['ward_id'] ?? null,
-                    'street' => $data['street'] ?? null,
-                    'street_number' => $data['street_number'] ?? null,
-                    'building_name' => $data['building_name'] ?? null,
-                    'full_address' => $data['full_address'] ?? null,
-                    'latitude' => $data['latitude'] ?? null,
-                    'longitude' => $data['longitude'] ?? null,
-                    'status' => $data['status'] ?? 'pending',
-                    'type' => $data['type'],
-                    'is_featured' => $data['is_featured'] ?? false,
-                    'is_vip' => $data['is_vip'] ?? false,
-                    'vip_expires_at' => $data['vip_expires_at'] ?? null,
-                    'is_urgent' => $data['is_urgent'] ?? false,
-                    'is_top' => $data['is_top'] ?? false,
-                    'top_expires_at' => $data['top_expires_at'] ?? null,
-                    'video_url' => $data['video_url'] ?? null,
-                    'virtual_tour_url' => $data['virtual_tour_url'] ?? null,
-                    'published_at' => now(),
-                ]);
+                $property = Property::create($propertyData);
+                
+                // Debug sau khi tạo
+                \Log::info('Property created with ID: ' . $property->id);
+                \Log::info('Property exists in DB: ' . ($property->exists ? 'YES' : 'NO'));
 
-                // Create translations
-                if (isset($data['translations'])) {
-                    foreach ($data['translations'] as $locale => $translation) {
-                        PropertyTranslation::create([
+               foreach ($translations as $locale => $translation) {
+                    if (is_array($translation) && isset($translation['title'])) {
+                        \Log::info("Creating translation for locale: {$locale}", [
                             'property_id' => $property->id,
-                            'locale' => $locale,
                             'title' => $translation['title'],
-                            'description' => $translation['description'],
+                            'description' => $translation['description'] ?? ''
+                        ]);
+                        
+                        PropertyTranslation::create([
+                            'property_id' => $property->id,     
+                            'locale' => $locale,               
+                            'title' => $translation['title'],
+                            'description' => $translation['description'] ?? '',
                             'content' => $translation['content'] ?? null,
                         ]);
                     }
@@ -104,11 +120,11 @@ class PropertyService
 
                 // Sync amenities
                 if (isset($data['amenities'])) {
-                    $property->amenities()->sync($data['amenities']);
+                     $property->amenities()->sync($data['amenities'], false);
                 }
 
                 // Handle VIP
-                if (data_get($data, 'is_vip')) {
+                /*if (data_get($data, 'is_vip')) {
                     $vipDays = data_get($data, 'vip_days', 7);
                     $property->update([
                         'is_vip' => true,
@@ -121,10 +137,10 @@ class PropertyService
                         'property',
                         $property->id
                     );
-                }
+                }*/
 
                 // Handle Top
-                if (data_get($data, 'is_top')) {
+                /*if (data_get($data, 'is_top')) {
                     $topDays = data_get($data, 'top_days', 7);
                     $property->update([
                         'is_top' => true,
@@ -145,7 +161,7 @@ class PropertyService
                     $property->id,
                     data_get($data, 'is_vip', false)
                 );
-
+                */
                 return [
                     'status' => true,
                     'data' => $property->load(['translations', 'images', 'amenities'])
@@ -160,6 +176,172 @@ class PropertyService
         }
     }
 
+
+     /**
+     * Update property
+     */
+    public function update(int $id, array $data): array
+    {
+        try {
+            return DB::transaction(function () use ($id, $data) {
+                $user = auth()->user();
+                
+                // Find property
+                $property = Property::find($id);
+                
+                if (!$property) {
+                    return [
+                        'status' => false,
+                        'message' => 'Property not found'
+                    ];
+                }
+                
+                // Check permission
+                if (!$property->canEdit($user->id)) {
+                    return [
+                        'status' => false,
+                        'message' => 'You do not have permission to edit this property'
+                    ];
+                }
+                
+                // Get translations
+                $translations = $data['translations'] ?? [];
+                
+                // Update slug if title changed
+                if (isset($translations['en']['title'])) {
+                    $newSlug = Str::slug($translations['en']['title']);
+                    if ($property->slug !== $newSlug) {
+                        $data['slug'] = $newSlug;
+                    }
+                }
+                
+                // Prepare update data
+                $updateData = [
+                    'category_id' => $data['category_id'] ?? $property->category_id,
+                    'type' => $data['type'] ?? $property->type,
+                    'status' => $data['status'] ?? $property->status,
+                    'price' => $data['price'] ?? $property->price,
+                    'is_negotiable' => $data['is_negotiable'] ?? $property->is_negotiable,
+                    'area' => $data['area'] ?? $property->area,
+                    'land_area' => $data['land_area'] ?? $property->land_area,
+                    'built_area' => $data['built_area'] ?? $property->built_area,
+                    'bedrooms' => $data['bedrooms'] ?? $property->bedrooms,
+                    'bathrooms' => $data['bathrooms'] ?? $property->bathrooms,
+                    'floors' => $data['floors'] ?? $property->floors,
+                    'garages' => $data['garages'] ?? $property->garages,
+                    'year_built' => $data['year_built'] ?? $property->year_built,
+                    'furnishing' => $data['furnishing'] ?? $property->furnishing,
+                    'legal_status' => $data['legal_status'] ?? $property->legal_status,
+                    'ownership_type' => $data['ownership_type'] ?? $property->ownership_type,
+                    'country_id' => $data['country_id'] ?? $property->country_id,
+                    'province_id' => $data['province_id'] ?? $property->province_id,
+                    'district_id' => $data['district_id'] ?? $property->district_id,
+                    'ward_id' => $data['ward_id'] ?? $property->ward_id,
+                    'street' => $data['street'] ?? $property->street,
+                    'street_number' => $data['street_number'] ?? $property->street_number,
+                    'building_name' => $data['building_name'] ?? $property->building_name,
+                    'full_address' => $data['full_address'] ?? $property->full_address,
+                    'latitude' => $data['latitude'] ?? $property->latitude,
+                    'longitude' => $data['longitude'] ?? $property->longitude,
+                    'video_url' => $data['video_url'] ?? $property->video_url,
+                    'virtual_tour_url' => $data['virtual_tour_url'] ?? $property->virtual_tour_url,
+                    'is_featured' => $data['is_featured'] ?? $property->is_featured,
+                    'is_vip' => $data['is_vip'] ?? $property->is_vip,
+                    'is_urgent' => $data['is_urgent'] ?? $property->is_urgent,
+                    'is_top' => $data['is_top'] ?? $property->is_top,
+                ];
+                
+                // Remove null values
+                $updateData = array_filter($updateData, function ($value) {
+                    return $value !== null;
+                });
+                
+                // Add slug if changed
+                if (isset($data['slug'])) {
+                    $updateData['slug'] = $data['slug'];
+                }
+                
+                // Update property
+                $property->update($updateData);
+                
+                // Update translations
+                foreach ($translations as $locale => $translation) {
+                    if (is_array($translation) && isset($translation['title'])) {
+                        PropertyTranslation::updateOrCreate(
+                            [
+                                'property_id' => $property->id,
+                                'locale' => $locale
+                            ],
+                            [
+                                'title' => $translation['title'],
+                                'description' => $translation['description'] ?? '',
+                                'content' => $translation['content'] ?? null,
+                            ]
+                        );
+                    }
+                }
+                
+                // Handle new images
+                if (isset($data['images']) && is_array($data['images']) && count($data['images']) > 0) {
+                    $this->uploadImagesToFileTable($property, $data['images']);
+                }
+                
+                // Handle existing images (keep IDs)
+                if (isset($data['existing_images']) && is_array($data['existing_images'])) {
+                    $keepIds = array_map('intval', $data['existing_images']);
+                    // Delete images not in keep list
+                    $property->images()
+                        ->whereNotIn('id', $keepIds)
+                        ->each(function ($image) {
+                            Storage::disk($image->disk)->delete($image->path);
+                            if ($image->thumbnail_path) {
+                                Storage::disk($image->disk)->delete($image->thumbnail_path);
+                            }
+                            $image->delete();
+                        });
+                }
+                
+                // Handle deleted images
+                if (isset($data['deleted_images']) && is_array($data['deleted_images'])) {
+                    foreach ($data['deleted_images'] as $imageId) {
+                        $image = File::find($imageId);
+                        if ($image) {
+                            Storage::disk($image->disk)->delete($image->path);
+                            if ($image->thumbnail_path) {
+                                Storage::disk($image->disk)->delete($image->thumbnail_path);
+                            }
+                            $image->delete();
+                            
+                            // Delete relation
+                            DB::table('property_file_relations')
+                                ->where('property_id', $property->id)
+                                ->where('file_id', $imageId)
+                                ->delete();
+                        }
+                    }
+                }
+                
+                // Sync amenities
+                if (isset($data['amenities']) && is_array($data['amenities'])) {
+                    $property->amenities()->sync($data['amenities']);
+                }
+                
+                return [
+                    'status' => true,
+                    'data' => $property->load(['translations', 'images', 'amenities'])
+                ];
+            });
+        } catch (\Exception $e) {
+            \Log::error('Property update failed: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return [
+                'status' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+    
+
     /**
      * Upload images to File table (centralized storage)
      */
@@ -169,7 +351,7 @@ class PropertyService
         
         foreach ($images as $index => $image) {
             // Check storage limit before upload
-            $this->storageService->checkStorageBeforeUpload($user, $image);
+           // $this->storageService->checkStorageBeforeUpload($user, $image);
             
             // Process and optimize image
             $uploadResult = $this->storageService->handleUpload(
@@ -179,6 +361,7 @@ class PropertyService
                 'image'
             );
             
+             $optimizationRatio = $uploadResult['optimization_ratio'] ?? 0;
             // Create file record
             $file = File::create([
                 'uuid' => Str::uuid(),
@@ -196,8 +379,8 @@ class PropertyService
                 'file_name' => basename($uploadResult['path']),
                 'size_bytes' => $image->getSize(),
                 'optimized_size_bytes' => $uploadResult['optimized_size'],
-                'is_optimized' => $uploadResult['optimization_ratio'] > 0,
-                'optimization_ratio' => $uploadResult['ratio'],
+                'is_optimized' => $optimizationRatio > 0,
+                'optimization_ratio' => $optimizationRatio,
                 'optimization_status' => 'completed',
                 'width' => $uploadResult['width'] ?? null,
                 'height' => $uploadResult['height'] ?? null,
@@ -218,12 +401,12 @@ class PropertyService
             ]);
             
             // Update storage usage
-            $this->storageService->updateStorageUsage($user, $image->getSize(), 'image');
+           // $this->storageService->updateStorageUsage($user, $image->getSize(), 'image');
             
             // Set primary image
-            if ($index === 0) {
+           /* if ($index === 0) {
                 $property->update(['primary_image_id' => $file->id]);
-            }
+            }*/
         }
     }
 

@@ -25,7 +25,7 @@ use App\Models\PropertyGroup;
 use App\Models\Shop;
 use App\Models\ShopLocation;
 use App\Models\Ticket;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserCart;
 use App\Observers\AreaObserver;
 use App\Observers\BookingObserver;

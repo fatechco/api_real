@@ -231,7 +231,7 @@ class PropertyRepository extends CoreRepository
                 'translations',
                 'images',
                 'amenities.translations' => fn($q) => $q->where('locale', $this->language),
-                'reviews' => fn($q) => $q->with('user')->latest(),
+                //'reviews' => fn($q) => $q->with('user')->latest(),
             ])
             ->where('uuid', $uuid)
             ->first();

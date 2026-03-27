@@ -1,13 +1,13 @@
 <?php
 namespace Modules\Package\Services;
 
-use App\Models\User;
-use Modules\Package\Models\UserStorageUsage;
-use Modules\Package\Models\UserPackage;
 use Modules\RealEstate\Models\Property;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Intervention\Image\ImageManager;
+use Modules\Package\Models\UserStorageUsage;
+use Modules\User\Models\User;
+
 //use FFMpeg\FFMpeg;
 
 class StorageService
@@ -19,6 +19,36 @@ class StorageService
     {
         $this->imageManager = ImageManager::gd();
        // $this->ffmpeg = FFMpeg::create();
+    }
+    
+    /**
+     * Kiểm tra storage trước khi upload
+     */
+    public function checkStorageBeforeUpload(User $user, UploadedFile $file): void
+    {
+        // 1. Lấy package hiện tại
+        $userPackage = $user->activePackage;
+        if (!$userPackage) {
+            throw new \Exception('No active package found');
+        }
+        
+        $limits = $userPackage->package->limits;
+        
+        // 2. Kiểm tra kích thước file
+        $fileSizeMB = $file->getSize() / 1024 / 1024;
+        if ($fileSizeMB > $limits['maxFileSize']) {
+            throw new \Exception("File size exceeds limit. Maximum: {$limits['maxFileSize']} MB");
+        }
+        
+        // 3. Kiểm tra dung lượng tổng
+        $storageUsage = $user->storageUsage;
+        $totalLimitBytes = $limits['storage'] * 1024 * 1024;
+        
+        if ($storageUsage->total_used_bytes + $file->getSize() > $totalLimitBytes) {
+            throw new \Exception("Storage limit exceeded. Used: " . 
+                $this->formatBytes($storageUsage->total_used_bytes) . " / " .
+                $this->formatBytes($totalLimitBytes));
+        }
     }
     
     /**
@@ -81,63 +111,201 @@ class StorageService
     }
     
     /**
-     * Tối ưu file dựa trên loại và giới hạn gói
+     * Validate file type
      */
-    protected function optimizeFile(UploadedFile $file, string $type, array $limits): array
+    protected function validateFileType(UploadedFile $file, array $allowedTypes): void
     {
-        $result = [
-            'file' => $file,
-            'optimized_size' => $file->getSize(),
-            'ratio' => 0,
-            'thumbnail_path' => null
-        ];
+        $mimeType = $file->getMimeType();
+        $extension = strtolower($file->getClientOriginalExtension());
         
-        if ($type === 'image') {
+        if (!in_array($mimeType, $allowedTypes) && !in_array($extension, $allowedTypes)) {
+            throw new \Exception("File type not allowed. Allowed: " . implode(', ', $allowedTypes));
+        }
+    }
+
+    /**
+     * Ensure storage usage record exists for user
+     */
+    public function ensureStorageUsageExists(int $userId, int $userPackageId): void
+    {
+        
+        $exists = UserStorageUsage::where('user_id', $userId)->exists();
+        
+        if (!$exists) {
+            UserStorageUsage::create([
+                'user_id' => $userId,
+                'user_package_id' => $userPackageId,
+                'total_used_bytes' => 0,
+                'images_bytes' => 0,
+                'videos_bytes' => 0,
+                'documents_bytes' => 0,
+                'other_bytes' => 0,
+                'total_files_count' => 0,
+                'images_count' => 0,
+                'videos_count' => 0,
+                'documents_count' => 0,
+                'other_count' => 0,
+                'listing_storage_usage' => [],
+                'last_reset_at' => now(),
+                'last_calculated_at' => now(),
+            ]);
+        }
+    }
+
+/**
+ * Tối ưu file dựa trên loại và giới hạn gói
+ */
+protected function optimizeFile(UploadedFile $file, string $type, array $limits): array
+{
+    // Khởi tạo mảng kết quả với đầy đủ các keys
+    $result = [
+        'file' => $file,
+        'optimized_size' => $file->getSize(),
+        'ratio' => 0,
+        'thumbnail_path' => null,
+        'width' => null,
+        'height' => null,
+    ];
+    
+    if ($type === 'image') {
+        try {
+            // Đọc ảnh
             $image = $this->imageManager->read($file->getPathname());
             
+            // Lưu kích thước gốc
+            $result['width'] = $image->width();
+            $result['height'] = $image->height();
+            
             // Resize nếu vượt quá resolution limit
-            if ($limits['maxImageResolution'] && 
-                ($image->width() > $limits['maxImageResolution'] || 
-                 $image->height() > $limits['maxImageResolution'])) {
-                $image->resize($limits['maxImageResolution'], $limits['maxImageResolution'], function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
+            if (isset($limits['maxImageResolution']) && $limits['maxImageResolution'] > 0) {
+                if ($image->width() > $limits['maxImageResolution'] || 
+                    $image->height() > $limits['maxImageResolution']) {
+                    $image->resize($limits['maxImageResolution'], $limits['maxImageResolution'], function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    });
+                    
+                    // Cập nhật kích thước sau resize
+                    $result['width'] = $image->width();
+                    $result['height'] = $image->height();
+                }
             }
             
-            // Nén ảnh
+            // Nén ảnh - Lấy quality phù hợp
             $quality = $this->getQualityByPackage($limits);
-            $encoded = $image->encode(null, $quality);
+            
+            // Encode ảnh với định dạng phù hợp
+            $mime = $file->getMimeType();
+            $encoded = null;
+            
+            if ($mime === 'image/jpeg') {
+                $encoded = $image->toJpeg(quality: $quality);
+            } elseif ($mime === 'image/png') {
+                $encoded = $image->toPng();
+            } elseif ($mime === 'image/webp') {
+                $encoded = $image->toWebp(quality: $quality);
+            } else {
+                $encoded = $image->toJpeg(quality: $quality);
+            }
+            
             $result['file'] = $encoded;
             $result['optimized_size'] = strlen((string) $encoded);
-            $result['ratio'] = round((1 - $result['optimized_size'] / $file->getSize()) * 100, 2);
+            
+            // Tính tỷ lệ nén
+            if ($file->getSize() > 0) {
+                $result['ratio'] = round((1 - $result['optimized_size'] / $file->getSize()) * 100, 2);
+            } else {
+                $result['ratio'] = 0;
+            }
             
             // Tạo thumbnail
             $result['thumbnail_path'] = $this->createThumbnail($image);
+            
+        } catch (\Exception $e) {
+            \Log::error('Image optimization failed: ' . $e->getMessage());
+            // Nếu optimization thất bại, vẫn dùng file gốc
+            $result['file'] = $file;
+            $result['optimized_size'] = $file->getSize();
+            $result['ratio'] = 0;
+            $result['width'] = null;
+            $result['height'] = null;
+            $result['thumbnail_path'] = null;
         }
+    }
+    
+    // Đảm bảo các keys luôn tồn tại
+    return [
+        'file' => $result['file'],
+        'optimized_size' => $result['optimized_size'],
+        'ratio' => $result['ratio'],
+        'thumbnail_path' => $result['thumbnail_path'],
+        'width' => $result['width'],
+        'height' => $result['height'],
+    ];
+}
+
+/**
+ * Create thumbnail
+ */
+protected function createThumbnail($image): string
+{
+    try {
+        // Clone ảnh gốc để tạo thumbnail
+        $thumbnail = clone $image;
         
-       /* if ($type === 'video' && $limits['videoDuration'] > 0) {
-            // Cắt video nếu quá dài
-            $video = $this->ffmpeg->open($file->getPathname());
-            $duration = $video->getStreams()->videos()->first()->get('duration');
-            
-            if ($duration > $limits['videoDuration']) {
-                // Cắt video
-                $clip = $video->clip(FFMpeg\Coordinate\TimeCode::fromSeconds(0), 
-                                     FFMpeg\Coordinate\TimeCode::fromSeconds($limits['videoDuration']));
-                $result['file'] = $clip;
-                $result['optimized_size'] = $this->getFileSize($clip);
-            }
-            
-            // Tạo thumbnail từ video
-            $result['thumbnail_path'] = $this->extractVideoThumbnail($video);
-        }*/
+        // Resize thumbnail (300x200)
+        $thumbnail->scale(width: 300);
         
-        return $result;
+        // Encode thumbnail
+        $thumbnailData = $thumbnail->toJpeg(quality: 70);
+        
+        $path = 'thumbnails/' . uniqid() . '.jpg';
+        Storage::disk('public')->put($path, (string) $thumbnailData);
+        
+        return $path;
+    } catch (\Exception $e) {
+        \Log::error('Thumbnail creation failed: ' . $e->getMessage());
+        return '';
+    }
+}
+
+    
+    /**
+     * Store file
+     */
+    protected function storeFile($file, $fileable, string $type): string
+    {
+        $path = $fileable instanceof Property 
+            ? "properties/{$fileable->id}/{$type}/" . uniqid() . '.jpg'
+            : "uploads/{$type}/" . uniqid() . '.jpg';
+        
+        Storage::disk('public')->put($path, (string) $file);
+        
+        return $path;
+    }
+    
+    
+    /**
+     * Update storage after delete
+     */
+    public function updateStorageAfterDelete($file): void
+    {
+        $user = $file->user;
+        $storageUsage = $user->storageUsage;
+        
+        $storageUsage->decrement('total_used_bytes', $file->size_bytes);
+        $storageUsage->decrement('total_files_count');
+        
+        $typeField = "{$file->file_category}s_bytes";
+        $countField = "{$file->file_category}s_count";
+        $storageUsage->decrement($typeField, $file->size_bytes);
+        $storageUsage->decrement($countField);
+        
+        $storageUsage->save();
     }
     
     /**
-     * Cập nhật storage usage
+     * Update storage usage
      */
     protected function updateStorageUsage(User $user, int $originalSize, int $optimizedSize, string $type, $fileable): void
     {
@@ -270,10 +438,6 @@ class StorageService
      */
     protected function getQualityByPackage(array $limits): int
     {
-        // Member basic: nén nhiều (quality 70)
-        // VIP/Agent: quality 85
-        // Agency: quality 90
-        
         $storageLimit = $limits['storage'];
         if ($storageLimit <= 50) return 70;
         if ($storageLimit <= 200) return 80;
@@ -291,7 +455,7 @@ class StorageService
             'fileable_type' => get_class($fileable),
             'fileable_id' => $fileable->id,
             'file_type' => $type,
-            'mime_type' => 'image/jpeg', // should get from file
+            'mime_type' => 'image/jpeg',
             'file_size' => $optimizedSize,
             'original_name' => 'file_name',
             'storage_path' => 'path',

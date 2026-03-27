@@ -15,8 +15,172 @@ class PackageService
     public function __construct(
         protected PackageRepository $repository,
         protected UserPackageRepository $userPackageRepository,
-        protected CreditService $creditService
+        protected CreditService $creditService,
+        protected StorageService $storageService
     ) {}
+
+         /**
+     * Check if user can create a new listing
+     */
+    public function canCreateListing(int $userId): array
+    {
+        $user = User::find($userId);
+        
+        if (!$user) {
+            return [
+                'can' => false,
+                'reason' => 'User not found'
+            ];
+        }
+
+        // Get user's active package
+        $userPackage = UserPackage::where('user_id', $userId)
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        // If no active package, assign free package
+        if (!$userPackage) {
+            $this->assignFreePackage($userId);
+            
+            // Get newly assigned package
+            $userPackage = UserPackage::where('user_id', $userId)
+                ->where('status', 'active')
+                ->where('expires_at', '>', now())
+                ->first();
+        }
+
+        if (!$userPackage) {
+            return [
+                'can' => false,
+                'reason' => 'No package available. Please contact administrator.'
+            ];
+        }
+
+        $package = $userPackage->package;
+        $limits = is_string($package->limits) ? json_decode($package->limits, true) : $package->limits ?? [];
+
+        // Check listing limit
+        $listingsLimit = $limits['listingsPerMonth'] ?? 0;
+        $listingsUsed = $userPackage->listings_used_this_month ?? 0;
+
+        if ($listingsLimit > 0 && $listingsUsed >= $listingsLimit) {
+            return [
+                'can' => false,
+                'reason' => "You have reached your monthly listing limit of {$listingsLimit}. Please upgrade your package."
+            ];
+        }
+
+        return [
+            'can' => true,
+            'data' => [
+                'remaining' => max(0, $listingsLimit - $listingsUsed),
+                'limit' => $listingsLimit,
+                'used' => $listingsUsed,
+                'package' => $package
+            ]
+        ];
+    }
+
+    /**
+     * Assign free package to user
+     */
+    public function assignFreePackage(int $userId): ?UserPackage
+    {
+        try {
+            DB::beginTransaction();
+            
+            // Get free package
+            $freePackage = Package::where('role_name', 'member_basic')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$freePackage) {
+                \Log::error('Free package not found. Please run PackageSeeder first.');
+                return null;
+            }
+
+            // Check if user already has an active package
+            $existingPackage = UserPackage::where('user_id', $userId)
+                ->where('status', 'active')
+                ->first();
+
+            if ($existingPackage) {
+                // Ensure storage usage exists
+                $this->storageService->ensureStorageUsageExists($userId, $existingPackage->id);
+                DB::commit();
+                return $existingPackage;
+            }
+
+            // Check if user has an expired package (for reactivation)
+            $expiredPackage = UserPackage::where('user_id', $userId)
+                ->where('status', 'expired')
+                ->first();
+
+            $userPackage = null;
+
+            if ($expiredPackage) {
+                $expiredPackage->update([
+                    'package_id' => $freePackage->id,
+                    'status' => 'active',
+                    'started_at' => now(),
+                    'expires_at' => now()->addMonth(),
+                    'credits_remaining' => $freePackage->credits_per_month,
+                    'listings_used_this_month' => 0,
+                ]);
+                $userPackage = $expiredPackage;
+            } else {
+                // Create new user package
+                $userPackage = UserPackage::create([
+                    'user_id' => $userId,
+                    'package_id' => $freePackage->id,
+                    'status' => 'active',
+                    'credits_remaining' => $freePackage->credits_per_month,
+                    'listings_used_this_month' => 0,
+                    'bonus_credits' => 0,
+                    'storage_used_bytes' => 0,
+                    'started_at' => now(),
+                    'expires_at' => now()->addMonth(),
+                ]);
+            }
+
+            // Create storage usage record
+            $this->storageService->ensureStorageUsageExists($userId, $userPackage->id);
+            
+            // Assign role to user
+            $user = User::find($userId);
+            if ($user && !$user->hasRole($freePackage->role_name)) {
+                $user->assignRole($freePackage->role_name);
+            }
+            
+            DB::commit();
+
+            return $userPackage;
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to assign free package: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+
+    /**
+     * Get or create user package
+     */
+    public function getOrCreateUserPackage(int $userId): ?UserPackage
+    {
+        $userPackage = UserPackage::where('user_id', $userId)
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$userPackage) {
+            $userPackage = $this->assignFreePackage($userId);
+        }
+
+        return $userPackage;
+    }
 
     public function create(array $data): array
     {

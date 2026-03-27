@@ -1,8 +1,6 @@
 <?php
 namespace Modules\User\Http\Resources;
-
 use App\Helpers\Utility;
-
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

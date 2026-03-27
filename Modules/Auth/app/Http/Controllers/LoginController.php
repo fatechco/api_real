@@ -12,7 +12,7 @@ use App\Http\Requests\FilterParamsRequest;
 
 use App\Services\EmailSettingService\EmailSendService;
 
-use App\Services\UserServices\UserWalletService;
+//use App\Services\UserServices\UserWalletService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Kreait\Laravel\Firebase\Facades\Firebase;
@@ -63,8 +63,7 @@ class LoginController extends Controller
             'access_token'  => $token,
             'token_type'    => 'Bearer',
             'user'          => UserResource::make($user->load([
-                'roles',
-                'wallet',
+                'roles',      
                 'invite.shop:id,slug,uuid,logo_img',
                 'invite.shop.translation' => fn($q) => $q->where('locale', $this->language)->select([
                     'id',
@@ -162,9 +161,9 @@ class LoginController extends Controller
 
                 (new UserService)->notificationSync($user);
 
-                if (empty($user->wallet)) {
+                /*if (empty($user->wallet)) {
                     (new UserWalletService)->create($user);
-                }
+                }*/
 
                 $token = $user->createToken('api_token')->plainTextToken;
 

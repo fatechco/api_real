@@ -1,5 +1,7 @@
 <?php
 namespace Modules\User\Models;
+
+use App\Models\Invitation;
 use App\Traits\Loadable;
 use App\Traits\RequestToModel;
 use App\Traits\UserSearch;
@@ -120,7 +122,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection|MasterDisabledTime[] $disabledTimes
  * @property-read int $payment_process_count
  * @property-read int|null $tokens_count
- * @property-read Wallet|HasOne|null $wallet
  * @property-read int|null $referral_from_topup_price
  * @property-read int|null $referral_from_withdraw_price
  * @property-read int|null $referral_to_withdraw_price
@@ -244,10 +245,10 @@ class User extends Authenticatable implements MustVerifyEmail
             'user_id', 'id', 'id', 'shop_id');
     }
 
-    public function wallet(): HasOne
+   /* public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class, 'user_id');
-    }
+    }*/
 
     public function reviews(): HasMany
     {
@@ -509,11 +510,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->when(isset($filter['active']), fn($q) => $q->where('active', $filter['active']))
             ->when(isset($filter['ids']), fn($q) => $q->whereIn('id', $filter['ids']))
             ->when(data_get($filter, 'exist_token'), fn($query) => $query->whereNotNull('firebase_token'))
-            ->when(data_get($filter, 'walletSort'), function ($q, $walletSort) use($filter) {
+          /*  ->when(data_get($filter, 'walletSort'), function ($q, $walletSort) use($filter) {
                 $q->whereHas('wallet', function ($q) use($walletSort, $filter) {
                     $q->orderBy($walletSort, $filter['sort'] ?? 'desc');
                 });
-            })
+            })*/
             ->when(data_get($filter, 'empty-setting'), function (Builder $query) {
                 $query->whereHas('deliveryManSetting', fn($q) => $q, '=', '0');
             })
@@ -524,7 +525,7 @@ class User extends Authenticatable implements MustVerifyEmail
                     'count'      => 'o_count',
                     'sum'        => 'o_sum',
                     'booking'    => 'b_count',
-                    'wallet_sum' => 'wallet_sum_price',
+                   // 'wallet_sum' => 'wallet_sum_price',
                     default      => Schema::hasColumn('users', $column) ? $column : 'id',
                 };
 
@@ -540,5 +541,92 @@ class User extends Authenticatable implements MustVerifyEmail
 
             });
 
+    }
+
+     /**
+     * Get active package
+     */
+    public function activePackage()
+    {
+        return $this->hasOne(\Modules\Package\Models\UserPackage::class, 'user_id')
+            ->where('status', 'active')
+            ->where('expires_at', '>', now());
+    }
+
+    /**
+     * Get all user packages
+     */
+    public function userPackages()
+    {
+        return $this->hasMany(\Modules\Package\Models\UserPackage::class, 'user_id');
+    }
+
+    /**
+     * Get storage usage
+     */
+    public function storageUsage()
+    {
+        return $this->hasOne(\Modules\Package\Models\UserStorageUsage::class, 'user_id');
+    }
+
+    /**
+     * Get current package (alias for activePackage)
+     */
+    public function currentPackage()
+    {
+        return $this->activePackage();
+    }
+
+    /**
+     * Check if user has active VIP package
+     */
+    public function isVip(): bool
+    {
+        $package = $this->activePackage;
+        if (!$package) {
+            return false;
+        }
+        
+        $limits = $package->package->limits;
+        return isset($limits['vipListings']) && $limits['vipListings'] > 0;
+    }
+
+    /**
+     * Get remaining listings for current month
+     */
+    public function getRemainingListings(): int
+    {
+        $package = $this->activePackage;
+        if (!$package) {
+            return 0;
+        }
+        
+        $limits = $package->package->limits;
+        $listingsLimit = $limits['listingsPerMonth'] ?? 0;
+        $listingsUsed = $package->listings_used_this_month ?? 0;
+        
+        return max(0, $listingsLimit - $listingsUsed);
+    }
+
+    /**
+     * Get storage usage percentage
+     */
+    public function getStorageUsagePercentage(): float
+    {
+        $storageUsage = $this->storageUsage;
+        $package = $this->activePackage;
+        
+        if (!$storageUsage || !$package) {
+            return 0;
+        }
+        
+        $limits = $package->package->limits;
+        $limitBytes = ($limits['storage'] ?? 0) * 1024 * 1024;
+        
+        if ($limitBytes <= 0) {
+            return 0;
+        }
+        
+        return round(($storageUsage->total_used_bytes / $limitBytes) * 100, 2);
     }
 }

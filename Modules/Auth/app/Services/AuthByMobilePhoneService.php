@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Services\CoreService;
 use App\Services\SMSGatewayService\SMSBaseService;
 
-use App\Services\UserServices\UserWalletService;
+//use App\Services\UserServices\UserWalletService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -134,9 +134,9 @@ class AuthByMobilePhoneService extends CoreService
             $user->syncRoles('user');
         }
 
-        if (empty($user->wallet?->uuid)) {
+        /*if (empty($user->wallet?->uuid)) {
             $user = (new UserWalletService)->create($user);
-        }
+        }*/
 
         $token = $user->createToken('api_token')->plainTextToken;
 

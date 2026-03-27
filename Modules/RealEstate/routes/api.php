@@ -50,9 +50,11 @@ Route::group(['prefix' => 'v1'], function () {
 
 // User routes (require auth)
 Route::group(['prefix' => 'v1', 'middleware' => ['auth:sanctum']], function () {
-    
+   
+
     Route::prefix('user/properties')->group(function () {
         Route::get('/', [PropertyController::class, 'myProperties']);
+        Route::get('/{uuid}/edit', [PropertyController::class, 'edit']);
         Route::post('/', [PropertyController::class, 'store']);
         Route::put('/{property}', [PropertyController::class, 'update']);
         Route::delete('/', [PropertyController::class, 'destroy']);

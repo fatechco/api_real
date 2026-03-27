@@ -34,17 +34,17 @@ class UserRepository extends CoreRepository
         $column = $filter['column'] ?? 'id';
         $sort = $filter['sort'] ?? 'desc';
 
-        if ($column !== 'id') {
+        /*if ($column !== 'id') {
             $column = Schema::hasColumn('wallet_histories', $column) ? $column : 'id';
-        }
+        }*/
 
         $user = $this->model()
             ->with([
                 'roles',
-                'wallet.histories' => fn($q) => $q
+                /*'wallet.histories' => fn($q) => $q
                     ->when(request('date_from'), fn($q, $dateFrom) => $q->where('date', '>=', $dateFrom))
                     ->when(request('date_to'),   fn($q, $dateTo)   => $q->where('date', '<=', $dateTo))
-                    ->orderBy($column, $sort),
+                    ->orderBy($column, $sort),*/
                 'shop',
                 'point',
                 'emailSubscription',
@@ -59,9 +59,9 @@ class UserRepository extends CoreRepository
             ])
             ->find($id);
 
-        if (empty($user?->wallet)) {
+        /*if (empty($user?->wallet)) {
             return $user;
-        }
+        }*/
 
         $referralActive = (int)Settings::where('key', 'referral_active')->first()?->value;
 
@@ -76,7 +76,7 @@ class UserRepository extends CoreRepository
                 ['expired_at', '>=', now()],
             ])->first();
 
-            if ($referral?->id) {
+            /*if ($referral?->id) {
                 $rate         = $user->wallet->currency?->rate ?? 1;
 
                 $fromTopUp    = $user->wallet->histories?->where('type','referral_from_topup');
@@ -95,7 +95,7 @@ class UserRepository extends CoreRepository
                     ->setAttribute('referral_to_withdraw_price', $toWithdraw?->sum('price') * $rate)
                     ->setAttribute('referral_to_topup_count', $toTopUp?->count())
                     ->setAttribute('referral_to_withdraw_count', $toWithdraw?->count());
-            }
+            }*/
 
             // for UserResource
             request()->offsetSet('referral', 1);
@@ -144,7 +144,7 @@ class UserRepository extends CoreRepository
         return $this->model()
             ->with([
                 'shop.translation' => fn($q) => $q->where('locale', $this->language),
-                'wallet',
+                //'wallet',
                 'point',
                 'deliveryManSetting',
                 'roles',
@@ -170,7 +170,7 @@ class UserRepository extends CoreRepository
             ->filter($filter)
             ->with([
                 'shop',
-                'wallet',
+                //'wallet',
                 'invitations.shop:id',
                 'invitations.shop.translation' => fn($q) => $q
                     ->select(['id', 'shop_id', 'locale', 'title'])
@@ -303,12 +303,12 @@ class UserRepository extends CoreRepository
                         return $query->whereIn('status', $statuses);
                     }),
                 'deliveryManOrders.user:id,img,firstname,lastname',
-                'wallet',
+              //  'wallet',
                 'invitations'
             ])
             ->withCount('deliveryManOrders')
             ->withSum('deliveryManOrders', 'total_price')
-            ->withSum('wallet', 'price')
+           // ->withSum('wallet', 'price')
             ->paginate($filter['perPage'] ?? 10);
     }
 
@@ -349,7 +349,7 @@ class UserRepository extends CoreRepository
 
         return $this->model()
             ->filter($filter)
-            ->whereHas('wallet')
+           // ->whereHas('wallet')
             ->select([
                 'id',
                 'uuid',
