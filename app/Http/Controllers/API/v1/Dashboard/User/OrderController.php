@@ -13,7 +13,7 @@ use App\Http\Resources\OrderResource;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Settings;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\OrderRepository\OrderRepository;
 use App\Services\OrderService\OrderReviewService;
 use App\Services\OrderService\OrderService;

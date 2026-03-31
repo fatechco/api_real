@@ -5,7 +5,7 @@ namespace App\Repositories\OrderRepository;
 
 use App\Models\Language;
 use App\Models\OrderRefund;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\CoreRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;

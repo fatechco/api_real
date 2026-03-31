@@ -9,7 +9,7 @@ use App\Http\Requests\FormOption\StoreRequest;
 use App\Http\Resources\FormOptionResource;
 use App\Models\FormOption;
 use App\Models\Invitation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\FormOptionRepository\FormOptionRepository;
 use App\Services\FormOptionService\FormOptionService;
 use Illuminate\Http\JsonResponse;

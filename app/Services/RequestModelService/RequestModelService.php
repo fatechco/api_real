@@ -7,7 +7,7 @@ use App\Helpers\ResponseError;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\RequestModel;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use App\Services\ProductService\ProductAdditionalService;
 use App\Services\UserServices\UserService;

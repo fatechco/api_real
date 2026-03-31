@@ -7,28 +7,36 @@ class PropertyCategoryResource extends JsonResource
 {
     public function toArray($request)
     {
-        $locale = app()->getLocale();
-
         return [
             'id' => $this->id,
-            'name' => $this->translate($locale)->name,
             'slug' => $this->slug,
-            'description' => $this->translate($locale)->description,
             'icon' => $this->icon,
-            //'image' => $this->image ? asset('storage/' . $this->image) : null,
-            //'parent_id' => $this->parent_id,
-            'parent' => $this->whenLoaded('parent', function() use ($locale) {
+            'image' => $this->image ? asset('storage/' . $this->image) : null,
+            'parent_id' => $this->parent_id,
+            'order' => $this->order,
+            'is_active' => (bool) $this->is_active,
+            'translations' => $this->whenLoaded('translations', function() {
+                return $this->translations->map(function($translation) {
+                    return [
+                        'locale' => $translation->locale,
+                        'name' => $translation->name,
+                        'description' => $translation->description,
+                    ];
+                });
+            }),
+            'parent' => $this->whenLoaded('parent', function() {
                 return [
                     'id' => $this->parent->id,
-                    'name' => $this->parent->translate($locale)->name,
-                    'slug' => $this->parent->slug
+                    'name' => $this->parent->name,
+                    'slug' => $this->parent->slug,
                 ];
             }),
-           // 'children' => PropertyCategoryResource::collection($this->whenLoaded('children')),
-            'order' => $this->order,
-            'is_active' => $this->is_active,
-           // 'properties_count' => $this->when($this->properties_count !== null, $this->properties_count),
-        
+            'children' => $this->whenLoaded('children', function() {
+                return PropertyCategoryResource::collection($this->children);
+            }),
+            'property_count' => $this->when(isset($this->properties_count), $this->properties_count),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

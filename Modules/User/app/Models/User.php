@@ -1,7 +1,10 @@
 <?php
 namespace Modules\User\Models;
 
+use App\Models\EmailSubscription;
 use App\Models\Invitation;
+use App\Models\Notification;
+use App\Models\NotificationUser;
 use App\Traits\Loadable;
 use App\Traits\RequestToModel;
 use App\Traits\UserSearch;
@@ -106,7 +109,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read UserAddress|null $address
  * @property-read Collection|UserAddress[] $addresses
  * @property-read int|null $addresses_count
- * @property-read UserPoint|null $point
  * @property-read Collection|PointHistory[] $pointHistory
  * @property-read int|null $point_history_count
  * @property-read Collection|Role[] $roles
@@ -222,11 +224,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return "$this->firstname $this->lastname";
     }
 
-    public function shop(): HasOne
-    {
-        return $this->hasOne(Shop::class);
-    }
-
+   
     public function emailSubscription(): HasOne
     {
         return $this->hasOne(EmailSubscription::class);
@@ -239,11 +237,7 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('active');
     }
 
-    public function moderatorShop(): HasOneThrough
-    {
-        return $this->hasOneThrough(Shop::class, Invitation::class,
-            'user_id', 'id', 'id', 'shop_id');
-    }
+   
 
    /* public function wallet(): HasOne
     {
@@ -298,26 +292,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function orderDetails(): HasManyThrough
     {
         return $this->hasManyThrough(OrderDetail::class,Order::class);
-    }
-
-    public function point(): HasOne
-    {
-        return $this->hasOne(UserPoint::class, 'user_id');
-    }
-
-    public function pointHistory(): HasMany
-    {
-        return $this->hasMany(PointHistory::class, 'user_id');
-    }
-
-    public function deliveryManSetting(): HasOne
-    {
-        return $this->hasOne(DeliveryManSetting::class, 'user_id');
-    }
-
-    public function likes(): BelongsToMany
-    {
-        return $this->belongsToMany(Banner::class, Like::class);
     }
 
     public function activity(): HasOne

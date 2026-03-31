@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\v1\Dashboard\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\ApiResponse;
 
 abstract class SellerBaseController extends Controller

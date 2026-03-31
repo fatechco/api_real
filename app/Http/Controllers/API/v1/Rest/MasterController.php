@@ -11,7 +11,7 @@ use App\Http\Requests\MasterDisabledTime\TimeFilterRequest;
 use App\Http\Resources\GalleryResource;
 use App\Http\Resources\UserResource;
 use App\Models\Gallery;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\BookingRepository\BookingRepository;
 use App\Repositories\UserRepository\MasterRepository;
 use Illuminate\Http\JsonResponse;

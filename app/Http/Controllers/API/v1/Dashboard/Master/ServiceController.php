@@ -8,7 +8,7 @@ use App\Http\Requests\FilterParamsRequest;
 use App\Http\Resources\ServiceResource;
 use App\Models\Invitation;
 use App\Models\Service;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\ServiceRepository\ServiceRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

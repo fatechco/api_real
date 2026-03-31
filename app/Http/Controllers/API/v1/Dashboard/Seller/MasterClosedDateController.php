@@ -10,7 +10,7 @@ use App\Http\Requests\MasterClosedDate\AdminStoreRequest;
 use App\Http\Resources\MasterClosedDateResource;
 use App\Http\Resources\UserResource;
 use App\Models\Invitation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\MasterClosedDateRepository\MasterClosedDateRepository;
 use App\Services\MasterClosedDateService\MasterClosedDateService;
 use Illuminate\Http\JsonResponse;

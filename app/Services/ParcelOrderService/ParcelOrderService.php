@@ -6,7 +6,7 @@ namespace App\Services\ParcelOrderService;
 use DB;
 use Exception;
 use Throwable;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Payment;
 use App\Helpers\Utility;
 use App\Models\Currency;

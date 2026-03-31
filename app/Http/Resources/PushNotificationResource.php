@@ -9,7 +9,7 @@ use App\Models\Invitation;
 use App\Models\Language;
 use App\Models\Order;
 use App\Models\PushNotification;
-use App\Models\User;
+use Modules\User\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Str;

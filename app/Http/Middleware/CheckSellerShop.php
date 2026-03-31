@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Helpers\ResponseError;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\ApiResponse;
 use Closure;
 use Exception;

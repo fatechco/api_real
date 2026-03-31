@@ -8,7 +8,7 @@ use App\Models\Booking;
 use App\Models\BookingActivity;
 use App\Models\ServiceMaster;
 use App\Models\Translation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use App\Traits\Notification;
 

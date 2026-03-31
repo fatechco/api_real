@@ -4,16 +4,16 @@ namespace Modules\User\Http\Controllers\Admin;
 
 use App\Helpers\ResponseError;
 use App\Http\Controllers\AdminBaseController;
-use App\Http\Requests\FilterParamsRequest;
-use App\Http\Requests\PasswordUpdateRequest;
-use App\Http\Requests\UserCreateRequest;
-use App\Http\Requests\UserUpdateRequest;
+use App\Http\Requests\FilterParamsRequest ;
+use Modules\User\Http\Requests\PasswordUpdateRequest;
+use Modules\User\Http\Requests\UserCreateRequest;
+use Modules\User\Http\Requests\UserUpdateRequest;
 
 //use App\Http\Resources\WalletHistoryResource;
 
 //use App\Repositories\WalletRepository\WalletHistoryRepository;
-use App\Services\AuthService\UserVerifyService;
-use App\Services\UserServices\UserService;
+//use App\Services\AuthService\UserVerifyService;
+
 //use App\Services\UserServices\UserWalletService;
 
 use Exception;
@@ -22,6 +22,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\User\Http\Resources\UserResource;
 use Modules\User\Models\User;
 use Modules\User\Repositories\UserRepository;
+use Modules\User\Services\UserService;
 
 class UserController extends AdminBaseController
 {
@@ -43,6 +44,8 @@ class UserController extends AdminBaseController
 
         return UserResource::collection($users);
     }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -68,7 +71,7 @@ class UserController extends AdminBaseController
             return $this->onErrorResponse($result);
         }
 
-        (new UserVerifyService)->verifyEmail(data_get($result, 'data'));
+       // (new UserVerifyService)->verifyEmail(data_get($result, 'data'));
 
         return $this->successResponse(
             __('errors.' . ResponseError::NO_ERROR, locale: $this->language),

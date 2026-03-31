@@ -7,7 +7,7 @@ use App\Helpers\ResponseError;
 use App\Models\Invitation;
 use App\Models\PushNotification;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use App\Traits\Notification;
 use DB;

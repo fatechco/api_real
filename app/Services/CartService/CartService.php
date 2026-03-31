@@ -14,7 +14,7 @@ use App\Models\Currency;
 use App\Models\Language;
 use App\Models\Product;
 use App\Models\Stock;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserCart;
 use App\Models\WholeSalePrice;
 use App\Repositories\CartRepository\CartRepository;

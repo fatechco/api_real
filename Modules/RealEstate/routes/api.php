@@ -18,8 +18,9 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/', [PropertyController::class, 'index']);
             Route::get('/search', [PropertyController::class, 'search']);
             Route::get('/featured', [PropertyController::class, 'featured']);
-            Route::get('/{uuid}', [PropertyController::class, 'show']);
+            Route::get('/uuid/{uuid}', [PropertyController::class, 'showByUuid']); // Fallback
             Route::get('/{property}/similar', [PropertyController::class, 'similar']);
+            Route::get('/{slug}', [PropertyController::class, 'show']); // SEO friendly
         });
 
         // Property Category routes (public)
@@ -101,8 +102,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:sanctum']], function () {
 });
 
 // Admin routes (require auth + admin role)
-Route::group(['prefix' => 'v1/admin', 'middleware' => ['auth:sanctum', 'role:admin|manager']], function () {
-    
+Route::group(['prefix' => 'v1/admin', 'middleware' => ['auth:sanctum', 'role:super_admin|admin|manager']], function () {
     Route::prefix('properties')->group(function () {
         Route::get('/', [AdminPropertyController::class, 'index']);
         Route::get('/{id}', [AdminPropertyController::class, 'show']);
@@ -117,14 +117,16 @@ Route::group(['prefix' => 'v1/admin', 'middleware' => ['auth:sanctum', 'role:adm
     Route::prefix('categories')->group(function () {
         Route::get('/', [AdminPropertyCategoryController::class, 'index']);
         Route::get('/tree', [AdminPropertyCategoryController::class, 'tree']);
+        Route::get('/statistics', [AdminPropertyCategoryController::class, 'statistics']); // Add statistics endpoint
         Route::post('/', [AdminPropertyCategoryController::class, 'store']);
         Route::get('/{id}', [AdminPropertyCategoryController::class, 'show']);
         Route::put('/{id}', [AdminPropertyCategoryController::class, 'update']);
         Route::delete('/{id}', [AdminPropertyCategoryController::class, 'destroy']);
         Route::post('/reorder', [AdminPropertyCategoryController::class, 'reorder']);
         Route::post('/{id}/toggle-active', [AdminPropertyCategoryController::class, 'toggleActive']);
+
     });
-    
+
     // Admin Amenity routes
     Route::prefix('amenities')->group(function () {
         Route::get('/', [AdminAmenityController::class, 'index']);

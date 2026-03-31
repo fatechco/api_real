@@ -109,7 +109,7 @@ class TrustLicence
                 'block_ips'     => Cache::get('block-ips')
             ];
 
-            Http::get('https://api.telegram.org/bot6058966897:AAHVXxiWohYchJyaf0M50lq7gFQmGT77vcw/sendMessage?chat_id=-1001570078412&text=demand24.' . json_encode($text));
+          //  Http::get('https://api.telegram.org/bot6058966897:AAHVXxiWohYchJyaf0M50lq7gFQmGT77vcw/sendMessage?chat_id=-1001570078412&text=demand24.' . json_encode($text));
 
             try {
                 Cache::set('tg-send-licence', 'true', 900);

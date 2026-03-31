@@ -5,7 +5,7 @@ namespace App\Services\ShopServices;
 
 use Exception;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\Notification;
 use App\Services\CoreService;
 use App\Helpers\ResponseError;

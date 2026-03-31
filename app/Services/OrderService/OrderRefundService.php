@@ -11,7 +11,7 @@ use App\Models\OrderDetail;
 use App\Models\OrderRefund;
 use App\Models\PaymentToPartner;
 use App\Models\Transaction;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserDigitalFile;
 use App\Models\WalletHistory;
 use App\Services\CoreService;

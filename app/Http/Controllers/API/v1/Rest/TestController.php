@@ -85,7 +85,7 @@ use App\Models\Transaction;
 use App\Models\Translation;
 use App\Models\Unit;
 use App\Models\UnitTranslation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserCart;
 use App\Models\UserPoint;
 use App\Models\Wallet;

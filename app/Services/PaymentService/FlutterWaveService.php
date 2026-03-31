@@ -7,7 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentPayload;
 use App\Models\PaymentProcess;
 use App\Models\Payout;
-use App\Models\User;
+use Modules\User\Models\User;
 use Exception;
 use Http;
 use Illuminate\Database\Eloquent\Model;

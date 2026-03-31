@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Order;
-use App\Models\User;
+use Modules\User\Models\User;
 
 class Notification
 {

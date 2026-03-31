@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Referral;
 use App\Models\Settings;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\WalletHistory;
 use App\Services\WalletHistoryService\WalletHistoryService;
 use App\Traits\Loggable;

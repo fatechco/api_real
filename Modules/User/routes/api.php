@@ -4,7 +4,12 @@ use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\LoginController;
 use Modules\Auth\Http\Controllers\RegisterController;
 use Modules\Auth\Http\Controllers\VerifyAuthController;
+use Modules\User\Http\Controllers\Admin\PermissionController;
+use Modules\User\Http\Controllers\Admin\RoleController;
 use Modules\User\Http\Controllers\Admin\UserController as AdminUserController;
+use Modules\User\Http\Controllers\Admin\UserPermissionController;
+use Modules\User\Http\Controllers\Admin\UserRoleController;
+
 //use Modules\User\Http\Controllers\UserController;
 
 Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
@@ -51,7 +56,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
 
 
     // ADMIN BLOCK
-    Route::group(['prefix' => 'admin', 'middleware' => ['sanctum.check', 'role:admin|manager'], 'as' => 'admin.'], function () {
+    Route::group(['prefix' => 'admin', 'middleware' => ['sanctum.check', 'role:super_admin|admin|manager'], 'as' => 'admin.'], function () {
     /* Users */
         Route::get('users/search',                  [AdminUserController::class, 'usersSearch']);
         Route::get('users/paginate',                [AdminUserController::class, 'paginate']);
@@ -64,7 +69,31 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
         Route::get('users/{uuid}/login-as',         [AdminUserController::class, 'loginAsUser']);
         Route::apiResource('users', AdminUserController::class)->except(['index']);
         Route::delete('users/delete',               [AdminUserController::class, 'destroy']);
-    });
+    
 
+
+            // ==================== ROLES ====================
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::get('/roles/{id}', [RoleController::class, 'show']);
+        Route::post('/roles', [RoleController::class, 'store']);
+        Route::put('/roles/{id}', [RoleController::class, 'update']);
+        Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+        Route::post('/roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
+        Route::get('/roles/stats', [RoleController::class, 'stats']);
+        
+        // ==================== PERMISSIONS ====================
+        Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/permissions/groups', [PermissionController::class, 'groups']);
+        
+        // ==================== ASSIGN TO USER ====================
+        Route::get('/users/{user}/roles', [UserRoleController::class, 'index']);
+        Route::post('/users/{user}/roles', [UserRoleController::class, 'assign']);
+        Route::delete('/users/{user}/roles/{role}', [UserRoleController::class, 'remove']);
+        Route::get('/users/{user}/permissions', [UserPermissionController::class, 'index']);
+        Route::post('/users/{user}/permissions', [UserPermissionController::class, 'give']);
+        Route::delete('/users/{user}/permissions/{permission}', [UserPermissionController::class, 'revoke']);
+        
+
+    });
     
 });

@@ -22,6 +22,7 @@ class PropertyController extends AdminBaseController
 
     public function index(FilterParamsRequest $request): AnonymousResourceCollection
     {
+       
         $properties = $this->repository->paginate($request->all());
         return PropertyResource::collection($properties);
     }

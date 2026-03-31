@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Events\Mails;
 
-use App\Models\User;
+use Modules\User\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;

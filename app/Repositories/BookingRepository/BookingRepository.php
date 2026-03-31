@@ -17,7 +17,7 @@ use App\Models\ServiceExtra;
 use App\Models\ServiceMaster;
 use App\Models\ServiceMasterPrice;
 use App\Models\Settings;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserGiftCart;
 use App\Models\UserMemberShip;
 use App\Repositories\CoreRepository;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Services\UserAddressService;
 
 use App\Helpers\ResponseError;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserAddress;
 use App\Services\CoreService;
 use Throwable;

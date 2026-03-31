@@ -6,7 +6,7 @@ namespace App\Http\Controllers\API\v1\Dashboard\Admin;
 use Exception;
 use Throwable;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Exports\ShopExport;
 use App\Imports\ShopImport;
 use App\Helpers\ResponseError;

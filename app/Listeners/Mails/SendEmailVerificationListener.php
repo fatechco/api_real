@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Listeners\Mails;
 
 use App\Events\Mails\SendEmailVerification;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\EmailSettingService\EmailSendService;
 use App\Traits\Loggable;
 use Exception;

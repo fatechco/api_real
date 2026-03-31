@@ -7,7 +7,7 @@ use App\Helpers\ResponseError;
 use App\Http\Requests\FilterParamsRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\AuthService\UserVerifyService;
 use App\Services\ProjectService\ProjectService;
 use App\Services\UserServices\UserService;

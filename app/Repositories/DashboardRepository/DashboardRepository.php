@@ -9,7 +9,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\Shop;
 use App\Models\Stock;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\CoreRepository;
 use Cache;
 use Illuminate\Contracts\Pagination\Paginator;

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services\AuthService;
 
-use App\Models\User;
+use Modules\User\Models\User;
 
 class UserVerifyService
 {

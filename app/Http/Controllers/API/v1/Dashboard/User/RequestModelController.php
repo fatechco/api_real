@@ -8,7 +8,7 @@ use App\Http\Requests\FilterParamsRequest;
 use App\Http\Requests\RequestModel\DeliveryManRequest;
 use App\Http\Resources\RequestModelResource;
 use App\Models\RequestModel;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\RequestModelRepository\RequestModelRepository;
 use App\Services\RequestModelService\RequestModelService;
 use Illuminate\Http\JsonResponse;

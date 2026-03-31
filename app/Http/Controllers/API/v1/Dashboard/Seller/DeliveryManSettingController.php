@@ -8,7 +8,7 @@ use App\Http\Requests\DeliveryManSetting\AdminRequest;
 use App\Http\Requests\FilterParamsRequest;
 use App\Http\Resources\DeliveryManSettingResource;
 use App\Models\DeliveryManSetting;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\DeliveryManSettingRepository\DeliveryManSettingRepository;
 use App\Services\DeliveryManSettingService\DeliveryManSettingService;
 use Illuminate\Http\JsonResponse;

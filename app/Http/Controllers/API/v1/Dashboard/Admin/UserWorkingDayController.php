@@ -9,7 +9,7 @@ use App\Http\Requests\UserWorkingDay\AdminRequest;
 use App\Http\Requests\UserWorkingDay\StoreRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\UserWorkingDayResource;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\UserWorkingDayRepository\UserWorkingDayRepository;
 use App\Services\UserWorkingDayService\UserWorkingDayService;
 use Illuminate\Http\JsonResponse;

@@ -5,7 +5,7 @@ namespace App\Services\UserServices;
 
 use App\Helpers\ResponseError;
 use App\Models\Currency;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Wallet;
 use App\Services\CoreService;
 use Exception;

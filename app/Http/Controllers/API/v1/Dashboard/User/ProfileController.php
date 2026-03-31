@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\API\v1\Dashboard\User;
 
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Helpers\ResponseError;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\SearchRequest;

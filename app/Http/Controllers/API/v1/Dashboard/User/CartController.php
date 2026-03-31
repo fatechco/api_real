@@ -11,7 +11,7 @@ use App\Http\Requests\Cart\StoreRequest;
 use App\Http\Requests\FilterParamsRequest;
 use App\Http\Resources\Cart\CartResource;
 use App\Models\Currency;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\CartRepository\CartRepository;
 use App\Services\CartService\CartService;
 use App\Traits\ApiResponse;

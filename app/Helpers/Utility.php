@@ -6,7 +6,7 @@ namespace App\Helpers;
 use App\Models\WalletHistory;
 use App\Services\WalletHistoryService\WalletHistoryService;
 use DB;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Order;
 use App\Models\Booking;
 use App\Models\Invitation;

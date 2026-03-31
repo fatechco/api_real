@@ -6,7 +6,7 @@ namespace App\Repositories\OrderRepository\DeliveryMan;
 use App\Helpers\OrderReportHelper;
 use App\Models\Order;
 use App\Models\OrderDetail;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\CoreRepository;
 use Illuminate\Support\Facades\DB;
 

@@ -1,5 +1,4 @@
 <?php
-
 namespace Modules\RealEstate\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +18,7 @@ class PropertyCategory extends Model implements TranslatableContract
     protected $fillable = [
         'slug',
         'icon',
+        'image',
         'parent_id',
         'order',
         'is_active'
@@ -35,18 +35,20 @@ class PropertyCategory extends Model implements TranslatableContract
 
         static::creating(function ($category) {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->translateOrDefault('en')->name);
+                $englishTranslation = $category->translateOrDefault('en');
+                $category->slug = Str::slug($englishTranslation->name);
             }
         });
 
         static::updating(function ($category) {
+            // Only update slug if name changed and slug hasn't been manually set
             if ($category->isDirty('slug')) return;
             
-            $originalName = $category->getOriginal('name');
-            $newName = $category->name;
+            $englishTranslation = $category->translateOrDefault('en');
+            $originalEnglishTranslation = $category->getOriginal('translations')['en'] ?? null;
             
-            if ($originalName !== $newName) {
-                $category->slug = Str::slug($category->translateOrDefault('en')->name);
+            if ($originalEnglishTranslation && $englishTranslation->name !== $originalEnglishTranslation['name']) {
+                $category->slug = Str::slug($englishTranslation->name);
             }
         });
     }
@@ -88,11 +90,6 @@ class PropertyCategory extends Model implements TranslatableContract
             return $this->parent->full_name . ' > ' . $this->name;
         }
         return $this->name;
-    }
-
-    public function getPropertyCountAttribute(): int
-    {
-        return $this->properties()->count();
     }
 
     /**

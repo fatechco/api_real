@@ -5,7 +5,7 @@ namespace App\Repositories\UserRepository;
 
 use DB;
 use Schema;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Order;
 use App\Models\Referral;
 use App\Models\Settings;

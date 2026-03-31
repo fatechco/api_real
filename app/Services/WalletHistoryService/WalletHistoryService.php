@@ -6,7 +6,7 @@ namespace App\Services\WalletHistoryService;
 use DB;
 use Log;
 use Throwable;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Payment;
 use App\Models\Transaction;
 use Illuminate\Support\Str;

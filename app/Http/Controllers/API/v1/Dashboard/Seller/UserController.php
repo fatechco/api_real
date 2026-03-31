@@ -8,7 +8,7 @@ use App\Http\Requests\FilterParamsRequest;
 use App\Http\Requests\UserCreateRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\UserRepository\UserRepository;
 use App\Services\AuthService\UserVerifyService;
 use App\Services\UserServices\UserService;

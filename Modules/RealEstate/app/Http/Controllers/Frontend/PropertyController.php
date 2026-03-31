@@ -13,6 +13,7 @@ use Modules\RealEstate\Repositories\PropertyRepository;
 use Modules\RealEstate\Services\PropertyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Modules\RealEstate\Http\Resources\PropertyDetailResource;
 use Modules\RealEstate\Http\Resources\PropertyEditResource;
 use Modules\RealEstate\Http\Resources\PropertyListResource;
 
@@ -33,7 +34,30 @@ class PropertyController extends Controller
         return PropertyResource::collection($properties);
     }
 
-    public function show(string $uuid): JsonResponse
+    public function show(string $slug): JsonResponse
+    {
+        $property = $this->repository->findBySlug($slug);
+
+        if (!$property) {
+            return response()->json([
+                'status' => false,
+                'message' => __('property::property.errors.not_found')
+            ], 404);
+        }
+
+        $this->repository->incrementViews(
+            $property->id,
+            auth()->check() ? auth()->id() : null
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => __('property::property.messages.success'),
+            'data' => PropertyDetailResource::make($property->load(['user', 'images', 'amenities']))
+        ]);
+    }
+
+    public function showByUuid(string $uuid): JsonResponse
     {
         $property = $this->repository->findByUuid($uuid);
 
@@ -161,6 +185,6 @@ class PropertyController extends Controller
     public function similar(Property $property): AnonymousResourceCollection
     {
         $similar = $this->repository->getSimilar($property);
-        return PropertyResource::collection($similar);
+        return PropertyListResource::collection($similar);
     }
 }

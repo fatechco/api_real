@@ -5,7 +5,7 @@ namespace App\Services\GalleryService;
 
 use App\Helpers\ResponseError;
 use App\Models\Gallery;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Throwable;

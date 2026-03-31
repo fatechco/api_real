@@ -1,6 +1,7 @@
 <?php
 
 namespace Modules\User\Services;
+
 use App\Helpers\ResponseError;
 use App\Http\Resources\UserResource;
 use App\Models\Invitation;
@@ -17,148 +18,59 @@ class UserService extends CoreService
 {
     use SetTranslations, \App\Traits\Notification;
 
-    /**
-     * @return string
-     */
     protected function getModelClass(): string
     {
         return User::class;
     }
 
     /**
-     * @param array $data
-     * @return array
+     * Create a new user
      */
     public function create(array $data): array
     {
         try {
-            $user = DB::transaction(function () use ($data) {
+            $data['password'] = bcrypt($data['password'] ?? 'password');
 
-                $data['password'] = bcrypt($data['password'] ?? 'password');
+            if (isset($data['phone'])) {
+                $data['phone'] = preg_replace('/\D/', '', (string)$data['phone']);
+            }
 
-                if (isset($data['firebase_token'])) {
-                    $data['firebase_token'] = (array)$data['firebase_token'];
-                }
+            /** @var User $user */
+            $user = $this->model()->create($data + ['ip_address' => request()->ip()]);
 
-                if (isset($data['phone'])) {
-                    $data['phone'] = preg_replace('/\D/', '', (string)$data['phone']);
-                }
+            if (!$user) {
+                return [
+                    'status' => false,
+                    'code'   => ResponseError::ERROR_400,
+                    'message' => 'Failed to create user'
+                ];
+            }
 
-                /** @var User $user */
-                $user = $this->model()->create($data + ['ip_address' => request()->ip()]);
+            // Assign role
+            $role = $data['role'] ?? 'member';
+            $user->syncRoles([$role]);
 
-                if (isset($data['images'][0])) {
-                    $user->galleries()->delete();
-                    $user->update(['img' => $data['images'][0]]);
-                    $user->uploads($data['images']);
-                }
+            // Load roles relationship
+            $user->load('roles');
 
-                $this->createDefaultWorkingDays($user);
-
-                $this->setTranslations($user, $data);
-
-                $user->syncRoles($data['role'] ?? 'user');
-
-                if ($user->hasRole(['moderator', 'deliveryman', 'master']) && isset($data['shop_id'])) {
-
-                    foreach ($data['shop_id'] as $shopId) {
-                        $user->invitations()->create([
-                            'shop_id'    => $shopId,
-                            'role'       => $data['role'],
-                            'created_by' => $user->id,
-                            'status'     => Invitation::ACCEPTED,
-                        ]);
-                    }
-
-                }
-
-                $this->notificationSync($user);
-
-                $user->emailSubscription()->updateOrCreate([
-                    'user_id' => $user->id
-                ], [
-                    'active' => true
-                ]);
-
-               // return (new UserWalletService)->create($user);
-            });
+            $this->notificationSync($user);
 
             return [
                 'status' => true,
                 'code'   => ResponseError::NO_ERROR,
-                'data'   => $user->loadMissing(['invitations', 'roles'])
+                'data'   => $user
             ];
         } catch (Throwable $e) {
-            return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];
-        }
-    }
-
-    public function notificationSync(User $user): void
-    {
-
-        $id = Notification::where('type', Notification::PUSH)
-            ->select(['id', 'type'])
-            ->first()
-            ?->id;
-
-        if ($id) {
-
-            $user->notifications()->sync([$id]);
-
-            return;
-        }
-
-        $user->notifications()->delete();
-
-    }
-
-    public function notifySend(array $data): void
-    {
-        try {
-            $user = User::where('id', @$data['user_id'])
-                ->select([
-                    'id',
-                    'firebase_token',
-                    'lang'
-                ])
-                ->first();
-
-            if (empty($user)) {
-                return;
-            }
-
-            /** @var User $auth */
-            $auth   = auth('sanctum')->user();
-            $locale = $user->lang ?? $this->language;
-            $title  = __('errors.' . ResponseError::NEW_MESSAGE, ['from' => $auth->full_name], $locale);
-
-            $this->sendNotification(
-                $user,
-                $user->firebase_token,
-                $data['message'] ?? $title ,
-                $title,
-                [
-                    'id'   => $user->id,
-                    'type' => PushNotification::NEW_MESSAGE,
-                    'sender' => [
-                        'id'        => $auth->id,
-                        'uuid'      => $auth->uuid,
-                        'firstname' => $auth->firstname,
-                        'lastname'  => $auth->lastname,
-                        'full_name' => $auth->full_name,
-                    ]
-                ],
-                [$user->id]
-            );
-        } catch (Throwable $e) {
-            $this->error($e);
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param string $uuid
-     * @param array $data
-     * @return array
+     * Update user
      */
     public function update(string $uuid, array $data): array
     {
@@ -182,11 +94,12 @@ class UserService extends CoreService
         }
 
         try {
+            DB::transaction(function () use ($user, $data) {
 
-            $user = DB::transaction(function () use ($user, $data) {
-
-                if (isset($data['password'])) {
+                if (isset($data['password']) && !empty($data['password'])) {
                     $data['password'] = bcrypt($data['password']);
+                } else {
+                    unset($data['password']);
                 }
 
                 if (isset($data['firebase_token'])) {
@@ -203,13 +116,11 @@ class UserService extends CoreService
                 $this->setTranslations($user, $data);
 
                 if (isset($data['subscribe'])) {
-
                     $user->emailSubscription()->updateOrCreate([
                         'user_id' => $user->id
                     ], [
                         'active' => !!$data['subscribe']
                     ]);
-
                 }
 
                 if (isset($data['notifications'])) {
@@ -223,11 +134,9 @@ class UserService extends CoreService
                 }
 
                 if (isset($data['role'])) {
-
-                    $user->syncRoles($data['role']);
+                    $user->syncRoles([$data['role']]);
 
                     if (in_array($data['role'], ['moderator', 'deliveryman', 'master']) && isset($data['shop_id'])) {
-
                         if (isset($data['delete_shop_id'])) {
                             $user->invitations()->whereIn('shop_id', $data['delete_shop_id'])->delete();
                         }
@@ -241,13 +150,12 @@ class UserService extends CoreService
                                 'status'     => Invitation::ACCEPTED,
                             ]);
                         }
-
                     }
-
                 }
-
-                return $user->loadMissing(['emailSubscription', 'notifications', 'invitations', 'roles']);
             });
+
+            // Load relationships after transaction
+            $user->load(['emailSubscription', 'notifications', 'invitations', 'roles']);
 
             return [
                 'status' => true,
@@ -255,14 +163,16 @@ class UserService extends CoreService
                 'data'   => $user
             ];
         } catch (Throwable $e) {
-            return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param $uuid
-     * @param $password
-     * @return array
+     * Update user password
      */
     public function updatePassword($uuid, $password): array
     {
@@ -275,15 +185,22 @@ class UserService extends CoreService
         try {
             $user->update(['password' => bcrypt($password)]);
 
-            return ['status' => true, 'code' => ResponseError::NO_ERROR, 'data' => $user];
+            return [
+                'status' => true,
+                'code'   => ResponseError::NO_ERROR,
+                'data'   => $user
+            ];
         } catch (Exception $e) {
-            return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param $uuid
-     * @return array
+     * Login as user (impersonate)
      */
     public function loginAsUser($uuid): array
     {
@@ -297,21 +214,24 @@ class UserService extends CoreService
             /** @var User $user */
             return [
                 'status' => true,
-                'code'   => ResponseError::ERROR_400,
+                'code'   => ResponseError::NO_ERROR,
                 'data'   => [
                     'access_token'  => $user->createToken('api_token')->plainTextToken,
                     'token_type'    => 'Bearer',
-                    'user'          => UserResource::make($user),
+                    'user'          => new UserResource($user),
                 ],
             ];
         } catch (Exception $e) {
-            return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param array $data
-     * @return array
+     * Update notifications
      */
     public function updateNotifications(array $data): array
     {
@@ -323,10 +243,12 @@ class UserService extends CoreService
 
             $user->notifications()->attach(data_get($data, 'notifications'));
 
+            $user->load('notifications');
+
             return [
                 'status' => true,
                 'code'   => ResponseError::NO_ERROR,
-                'data'   => $user->loadMissing('notifications')
+                'data'   => $user
             ];
         } catch (Exception $e) {
             $this->error($e);
@@ -339,8 +261,7 @@ class UserService extends CoreService
     }
 
     /**
-     * @param int $currencyId
-     * @return array
+     * Update currency
      */
     public function updateCurrency(int $currencyId): array
     {
@@ -350,15 +271,22 @@ class UserService extends CoreService
 
             $user->update(['currency_id' => $currencyId]);
 
-            return ['status' => true, 'code' => ResponseError::NO_ERROR, 'data' => $user];
+            return [
+                'status' => true,
+                'code'   => ResponseError::NO_ERROR,
+                'data'   => $user
+            ];
         } catch (Exception $e) {
-            return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param string $lang
-     * @return array
+     * Update language
      */
     public function updateLang(string $lang): array
     {
@@ -368,38 +296,43 @@ class UserService extends CoreService
 
             $user->update(['lang' => $lang]);
 
-            return ['status' => true, 'code' => ResponseError::NO_ERROR, 'data' => $user];
+            return [
+                'status' => true,
+                'code'   => ResponseError::NO_ERROR,
+                'data'   => $user
+            ];
         } catch (Exception $e) {
-            return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param array|null $ids
-     * @return array
+     * Delete users
      */
     public function delete(?array $ids = []): array
     {
-       /* foreach (User::with(['wallet.histories', 'transactions'])->find($ids) as $user) {
+        try {
+            User::whereIn('id', $ids)->delete();
 
-          
-            DB::table('wallet_histories')->where('created_by', $user->id)->delete();
-            $user->wallet?->histories()->delete();
-            $user->wallet()->delete();
-            $user->transactions()->delete();
-            $user->delete();
-
-        }*/
-
-        return [
-            'status' => true,
-            'code'   => ResponseError::NO_ERROR
-        ];
+            return [
+                'status' => true,
+                'code'   => ResponseError::NO_ERROR
+            ];
+        } catch (Exception $e) {
+            return [
+                'status' => false,
+                'code'   => ResponseError::ERROR_400,
+                'message' => $e->getMessage()
+            ];
+        }
     }
 
     /**
-     * @param string|null $firebaseToken
-     * @return array|bool[]
+     * Update Firebase token
      */
     public function firebaseTokenUpdate(?string $firebaseToken): array
     {
@@ -412,7 +345,7 @@ class UserService extends CoreService
         }
 
         /** @var User $user */
-        $user     = auth('sanctum')->user();
+        $user = auth('sanctum')->user();
 
         $tokens   = is_array($user->firebase_token) ? $user->firebase_token : [$user->firebase_token];
         $tokens[] = $firebaseToken;
@@ -423,59 +356,43 @@ class UserService extends CoreService
     }
 
     /**
-     * @param User $user
-     * @return void
+     * Toggle user active status
      */
     public function setActive(User $user): void
     {
         $user->update(['active' => !$user->active]);
     }
 
+    /**
+     * Create default working days for user
+     */
     public function createDefaultWorkingDays(User $user): void
     {
         $user->workingDays()->createMany([
-            [
-                'day'       => 'monday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ],
-            [
-                'day'       => 'tuesday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ],
-            [
-                'day'       => 'wednesday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ],
-            [
-                'day'       => 'thursday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ],
-            [
-                'day'       => 'friday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ],
-            [
-                'day'       => 'saturday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ],
-            [
-                'day'       => 'sunday',
-                'from'      => '09:00',
-                'to'        => '18:00',
-                'disabled'  => false
-            ]
+            ['day' => 'monday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false],
+            ['day' => 'tuesday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false],
+            ['day' => 'wednesday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false],
+            ['day' => 'thursday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false],
+            ['day' => 'friday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false],
+            ['day' => 'saturday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false],
+            ['day' => 'sunday', 'from' => '09:00', 'to' => '18:00', 'disabled' => false]
         ]);
+    }
+
+    /**
+     * Sync user notifications
+     */
+    protected function notificationSync(User $user): void
+    {
+        $id = Notification::where('type', Notification::PUSH)
+            ->select(['id', 'type'])
+            ->first()
+            ?->id;
+
+        if ($id) {
+            $user->notifications()->sync([$id]);
+        } else {
+            $user->notifications()->delete();
+        }
     }
 }

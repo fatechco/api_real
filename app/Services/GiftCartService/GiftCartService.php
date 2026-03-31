@@ -6,7 +6,7 @@ namespace App\Services\GiftCartService;
 use App\Helpers\ResponseError;
 use App\Models\GiftCart;
 use App\Models\PushNotification;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserGiftCart;
 use App\Services\CoreService;
 use App\Traits\Notification;

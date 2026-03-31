@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\UserWorkingDayRepository;
 
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserWorkingDay;
 use App\Repositories\CoreRepository;
 use Illuminate\Pagination\LengthAwarePaginator;

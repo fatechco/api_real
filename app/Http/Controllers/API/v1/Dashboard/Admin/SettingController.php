@@ -8,7 +8,7 @@ use App\Http\Controllers\API\v1\Rest\SettingController as RestSettingController;
 use App\Http\Requests\FilterParamsRequest;
 use App\Models\Referral;
 use App\Models\Settings;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\SettingService\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Artisan;

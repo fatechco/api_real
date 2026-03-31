@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Helpers\ResponseError;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\ApiResponse;
 use Closure;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class RoleMiddleware
         /** @var User $user */
         $user = auth('sanctum')->user();
 
-        if ($user->hasAnyRole($roles) || $user->hasRole('admin')) {
+        if ($user->hasAnyRole($roles) || $user->hasRole('admin') || $user->hasRole('super_admin')) {
             return $next($request);
         }
 

@@ -10,7 +10,7 @@ use App\Models\Payment;
 use App\Models\ShopAdsPackage;
 use App\Models\ShopSubscription;
 use App\Models\Transaction;
-use App\Models\User;
+use Modules\User\Models\User;
 use DB;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;

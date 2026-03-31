@@ -12,7 +12,7 @@ use Schema;
 use Throwable;
 use Exception;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\Booking;

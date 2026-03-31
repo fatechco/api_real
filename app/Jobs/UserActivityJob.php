@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\UserServices\UserActivityService;
 use App\Traits\Loggable;
 use Exception;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Helpers\Utility;
-use App\Models\User;
+use Modules\User\Models\User;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

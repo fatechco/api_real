@@ -4,7 +4,7 @@ namespace Modules\Auth\Services;
 
 use App\Helpers\ResponseError;
 use App\Http\Resources\UserResource;
-use App\Models\User;
+use Moduels\Modules\User\Models\User;
 use App\Services\CoreService;
 use App\Services\SMSGatewayService\SMSBaseService;
 

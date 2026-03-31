@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Traits;
 
 use App\Models\Review;
-use App\Models\User;
+use Modules\User\Models\User;
 use DB;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;

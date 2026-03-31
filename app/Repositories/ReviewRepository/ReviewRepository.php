@@ -10,7 +10,7 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\Review;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\CoreRepository;
 use DB;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;

@@ -8,7 +8,7 @@ use App\Http\Requests\Shop\StoreRequest;
 use App\Http\Resources\ShopResource;
 use App\Models\Language;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\ShopRepository\ShopRepository;
 use App\Services\ShopServices\ShopActivityService;
 use App\Services\ShopServices\ShopService;

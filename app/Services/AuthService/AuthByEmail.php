@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Services\AuthService;
 
 use App\Events\Mails\SendEmailVerification;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;

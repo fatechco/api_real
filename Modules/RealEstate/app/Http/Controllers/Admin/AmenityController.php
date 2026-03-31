@@ -26,6 +26,7 @@ class AmenityController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        
         $amenities = $this->repository->paginate($request->all());
         
         return response()->json([

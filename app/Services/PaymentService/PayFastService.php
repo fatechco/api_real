@@ -4,7 +4,7 @@ namespace App\Services\PaymentService;
 
 use Http;
 use Exception;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Payout;
 use App\Models\Payment;
 use Illuminate\Support\Str;

@@ -9,7 +9,7 @@ use Exception;
 use Throwable;
 use DateInterval;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Point;
 use App\Models\Payment;
 use App\Models\Booking;

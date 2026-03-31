@@ -6,7 +6,7 @@ namespace App\Services\OrderService;
 use DB;
 use Exception;
 use Throwable;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Order;
 use App\Models\Coupon;
 use App\Models\Payment;

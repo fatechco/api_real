@@ -930,7 +930,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['block.ip']], function () {
             Route::apiResource('user-working-days', Admin\UserWorkingDayController::class);
             Route::delete('user-working-days/delete',   [Admin\UserWorkingDayController::class, 'destroy']);
 
-            Route::get('roles', Admin\RoleController::class);
+           // Route::get('roles', Admin\RoleController::class);
 
             /* Users Wallet Histories */
             Route::get('wallet/histories/paginate',     [Admin\WalletHistoryController::class, 'paginate']);

@@ -19,10 +19,10 @@ class UserCreateRequest extends BaseRequest
                 'email',
                 Rule::unique('users', 'email')->ignore(request()->route('user'), 'uuid')
             ],
-            'phone' => [
+          /*  'phone' => [
                 'numeric',
                 Rule::unique('users', 'phone')->ignore(request()->route('user'), 'uuid')
-            ],
+            ],*/
             'shop_id'                         => 'array',
             'shop_id.*'                       => 'integer|exists:shops,id',
             'role'                            => ['string', 'exists:roles,name'],

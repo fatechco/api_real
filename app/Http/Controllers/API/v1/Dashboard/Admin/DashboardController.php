@@ -6,7 +6,7 @@ namespace App\Http\Controllers\API\v1\Dashboard\Admin;
 use App\Helpers\ResponseError;
 use App\Http\Requests\FilterParamsRequest;
 use App\Http\Resources\StockResource;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Repositories\DashboardRepository\DashboardRepository;
 use Artisan;
 use DateTimeZone;

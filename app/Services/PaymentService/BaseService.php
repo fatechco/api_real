@@ -23,7 +23,7 @@ use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Models\UserGiftCart;
 use App\Models\UserMemberShip;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletHistory;
 use App\Repositories\CartRepository\CartRepository;

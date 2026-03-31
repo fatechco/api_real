@@ -6,7 +6,7 @@ namespace App\Services;
 use App\Helpers\ResponseError;
 use App\Models\Currency;
 use App\Models\Language;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\ApiResponse;
 use App\Traits\Loggable;
 use Cache;

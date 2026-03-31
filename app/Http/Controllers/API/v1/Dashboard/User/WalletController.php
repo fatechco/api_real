@@ -12,7 +12,7 @@ use App\Models\Currency;
 use App\Models\NotificationUser;
 use App\Models\PointHistory;
 use App\Models\PushNotification;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\WalletHistory;
 use App\Repositories\WalletRepository\WalletHistoryRepository;
 use App\Services\UserServices\UserWalletService;

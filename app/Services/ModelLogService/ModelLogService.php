@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Services\ModelLogService;
 
 use App\Models\ModelLog;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use Illuminate\Database\Eloquent\Model;
 use Throwable;

@@ -9,7 +9,7 @@ use Log;
 use Exception;
 use Throwable;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Order;
 use App\Models\Point;
 use App\Models\Payment;

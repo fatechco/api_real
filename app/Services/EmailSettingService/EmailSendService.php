@@ -11,7 +11,7 @@ use App\Models\Gallery;
 use App\Models\Order;
 use App\Models\Settings;
 use App\Models\Translation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Exception;

@@ -8,7 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Invitation;
 use App\Models\Notification;
 use App\Models\PushNotification;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use App\Traits\SetTranslations;
 use DB;
@@ -38,9 +38,9 @@ class UserService extends CoreService
 
                 $data['password'] = bcrypt($data['password'] ?? 'password');
 
-                if (isset($data['firebase_token'])) {
+                /*if (isset($data['firebase_token'])) {
                     $data['firebase_token'] = (array)$data['firebase_token'];
-                }
+                }*/
 
                 if (isset($data['phone'])) {
                     $data['phone'] = preg_replace('/\D/', '', (string)$data['phone']);
@@ -49,46 +49,34 @@ class UserService extends CoreService
                 /** @var User $user */
                 $user = $this->model()->create($data + ['ip_address' => request()->ip()]);
 
-                if (isset($data['images'][0])) {
+                /*if (isset($data['images'][0])) {
                     $user->galleries()->delete();
                     $user->update(['img' => $data['images'][0]]);
                     $user->uploads($data['images']);
-                }
+                }*/
 
-                $this->createDefaultWorkingDays($user);
+              //  $this->createDefaultWorkingDays($user);
 
-                $this->setTranslations($user, $data);
+              //  $this->setTranslations($user, $data);
 
-                $user->syncRoles($data['role'] ?? 'user');
+                $user->syncRoles($data['role'] ?? 'memeber');
 
-                if ($user->hasRole(['moderator', 'deliveryman', 'master']) && isset($data['shop_id'])) {
-
-                    foreach ($data['shop_id'] as $shopId) {
-                        $user->invitations()->create([
-                            'shop_id'    => $shopId,
-                            'role'       => $data['role'],
-                            'created_by' => $user->id,
-                            'status'     => Invitation::ACCEPTED,
-                        ]);
-                    }
-
-                }
-
+                
                 $this->notificationSync($user);
 
-                $user->emailSubscription()->updateOrCreate([
+               /* $user->emailSubscription()->updateOrCreate([
                     'user_id' => $user->id
                 ], [
                     'active' => true
-                ]);
+                ]);*/
 
-                return (new UserWalletService)->create($user);
+                //return (new UserWalletService)->create($user);
             });
 
             return [
                 'status' => true,
                 'code'   => ResponseError::NO_ERROR,
-                'data'   => $user->loadMissing(['invitations', 'roles'])
+                'data'   => $user->loadMissing(['roles'])
             ];
         } catch (Throwable $e) {
             return ['status' => false, 'code' => ResponseError::ERROR_400, 'message' => $e->getMessage()];

@@ -6,7 +6,7 @@ namespace App\Services\UserServices;
 use App\Helpers\ResponseError;
 use App\Jobs\UserActivityJob;
 use App\Models\Product;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserActivity;
 use App\Services\CoreService;
 use Exception;

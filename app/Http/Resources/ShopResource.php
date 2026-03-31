@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 
 use Cache;
 use App\Models\Shop;
-use App\Models\User;
+use Modules\User\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Resources\Bonus\BonusResource;
 use Illuminate\Http\Resources\Json\JsonResource;

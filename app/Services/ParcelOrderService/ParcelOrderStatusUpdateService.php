@@ -7,7 +7,7 @@ use App\Helpers\ResponseError;
 use App\Models\ParcelOrder;
 use App\Models\Payment;
 use App\Models\Transaction;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\WalletHistory;
 use App\Services\CoreService;
 use App\Services\WalletHistoryService\WalletHistoryService;

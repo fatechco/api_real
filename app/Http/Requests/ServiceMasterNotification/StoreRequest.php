@@ -5,7 +5,7 @@ namespace App\Http\Requests\ServiceMasterNotification;
 
 use App\Http\Requests\BaseRequest;
 use App\Models\ServiceMasterNotification;
-use App\Models\User;
+use Modules\User\Models\User;
 use Illuminate\Validation\Rule;
 
 class StoreRequest extends BaseRequest

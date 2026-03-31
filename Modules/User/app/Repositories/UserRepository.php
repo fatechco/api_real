@@ -169,17 +169,6 @@ class UserRepository extends CoreRepository
         return $this->model()
             ->filter($filter)
             ->with([
-                'shop',
-                //'wallet',
-                'invitations.shop:id',
-                'invitations.shop.translation' => fn($q) => $q
-                    ->select(['id', 'shop_id', 'locale', 'title'])
-                    ->where('locale', $this->language),
-
-                'deliveryManSetting',
-                'workingDays' => fn($q) => $q->when(data_get($filter, 'work_24_7'),
-                    fn($b) => $b->where('from', '01-00')->where('to', '>=', '23-00')
-                ),
                 'translation' => fn($q) => $q->where('locale', $this->language),
                 'translations',
                 'roles' => fn($q) => $q->when(data_get($filter, 'role'), fn($q, $role) => $q->where('name', $role))

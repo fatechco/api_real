@@ -12,6 +12,6 @@ abstract class AdminBaseController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->middleware(['sanctum.check', 'check.parentSeller']);
+        $this->middleware(['sanctum.check']);
     }
 }

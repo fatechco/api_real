@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\API\v1\Auth;
 
 use Throwable;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\ApiResponse;
 use App\Traits\Notification;
 use App\Helpers\ResponseError;

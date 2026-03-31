@@ -24,7 +24,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Lcobucci\JWT\UnencryptedToken;
 use Spatie\Permission\Models\Role;
 use App\Traits\ApiResponse;
-use App\Models\User;
+use Modules\User\Models\User;
 use Str;
 use Throwable;
 use DB;

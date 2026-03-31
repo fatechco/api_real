@@ -219,6 +219,25 @@ class PropertyRepository extends CoreRepository
     }
 
     /**
+     * Find property by slug
+     */
+    public function findBySlug(string $slug): ?Property
+    {
+        return $this->model()
+            ->with([
+                'user',
+                'project',
+                'category.translations' => fn($q) => $q->where('locale', $this->language),
+                'translations',
+                'images' => fn($q) => $q->orderBy('order'),
+                'amenities.translations' => fn($q) => $q->where('locale', $this->language),
+               // 'reviews' => fn($q) => $q->with('user')->latest(),
+            ])
+            ->where('slug', $slug)
+            ->first();
+    }
+
+    /**
      * Get property by UUID
      */
     public function findByUuid(string $uuid): ?Property

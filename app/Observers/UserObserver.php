@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\ModelLogService\ModelLogService;
 use Illuminate\Support\Str;
 use Psr\SimpleCache\InvalidArgumentException;
@@ -39,7 +39,7 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        $user->point()->create();
+       // $user->point()->create();
 
         (new ModelLogService)->logging($user, $user->getAttributes(), 'created');
     }

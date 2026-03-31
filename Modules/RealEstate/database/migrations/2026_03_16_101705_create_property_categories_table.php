@@ -11,7 +11,7 @@ return new class extends Migration
             $table->id();
             $table->string('slug')->unique();
             $table->string('icon')->nullable();
-            $table->string('color')->nullable();
+            $table->string('image')->nullable();
             $table->integer('parent_id')->nullable();
             $table->integer('order')->default(0);
             $table->boolean('is_active')->default(true);

@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Helpers\NotificationHelper;
 use App\Models\Order;
 use App\Models\Settings;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Traits\Loggable;
 use App\Traits\Notification;
 use Exception;

@@ -6,7 +6,7 @@ namespace App\Repositories\UserRepository;
 use DateTime;
 use Exception;
 use DateInterval;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\Booking;
 use App\Models\Settings;
 use App\Models\Invitation;

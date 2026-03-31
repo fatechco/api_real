@@ -16,7 +16,7 @@ use App\Models\ShopAdsPackage;
 use App\Models\ShopSubscription;
 use App\Models\Transaction;
 use App\Models\Translation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Models\UserDigitalFile;
 use App\Models\UserGiftCart;
 use App\Models\UserMemberShip;

@@ -14,7 +14,7 @@ use App\Models\ParcelOrder;
 use App\Models\PushNotification;
 use App\Models\Settings;
 use App\Models\Translation;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\PushNotificationService\PushNotificationService;
 use Cache;
 use DB;

@@ -5,7 +5,7 @@ namespace App\Services\MasterClosedDateService;
 
 use App\Helpers\ResponseError;
 use App\Models\MasterClosedDate;
-use App\Models\User;
+use Modules\User\Models\User;
 use App\Services\CoreService;
 use Throwable;
 
